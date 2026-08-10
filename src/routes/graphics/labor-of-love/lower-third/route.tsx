@@ -3,9 +3,10 @@ import { createPortal } from 'react-dom'
 import { createFileRoute, getRouteApi } from '@tanstack/react-router'
 import { PreviewToolbarLayout } from '#/graphics/preview/PreviewToolbarLayout'
 import { PREVIEW_TOOLBAR_SLOT_ID } from '#/graphics/GraphicStage'
+import { useControlledGraphic } from '#/control/client'
 import { LaborOfLoveLowerThirdGraphic } from './-Graphic'
 import { PreviewToolbarControls } from './-PreviewToolbarControls'
-import { laborOfLoveLowerThirdProps, type LaborOfLoveLowerThirdProps } from './-types'
+import { laborOfLoveLowerThirdTemplateSchema } from './-schema'
 
 export const Route = createFileRoute('/graphics/labor-of-love/lower-third')({
   component: LaborOfLoveLowerThird,
@@ -15,10 +16,9 @@ const graphicsRoute = getRouteApi('/graphics')
 
 function LaborOfLoveLowerThird() {
   const { preview } = graphicsRoute.useSearch()
-  const [graphicState, setGraphicState] = useState<LaborOfLoveLowerThirdProps>(() => ({
-    ...laborOfLoveLowerThirdProps,
-  }))
-  const [onScreen, setOnScreen] = useState(true)
+  const { props, onScreen, patchProps, setOnScreen } = useControlledGraphic(
+    laborOfLoveLowerThirdTemplateSchema,
+  )
   const [toolbarSlot, setToolbarSlot] = useState<HTMLElement | null>(null)
 
   useLayoutEffect(() => {
@@ -31,14 +31,14 @@ function LaborOfLoveLowerThird() {
 
   return (
     <>
-      <LaborOfLoveLowerThirdGraphic props={graphicState} onScreen={onScreen} />
+      <LaborOfLoveLowerThirdGraphic props={props} onScreen={onScreen} />
       {toolbarSlot &&
         createPortal(
           <PreviewToolbarLayout onIn={() => setOnScreen(true)} onOut={() => setOnScreen(false)}>
             <PreviewToolbarControls
-              workerName={graphicState.workerName}
-              championshipName={graphicState.championshipName}
-              onChange={(patch) => setGraphicState((prev) => ({ ...prev, ...patch }))}
+              workerName={props.workerName}
+              championshipName={props.championshipName}
+              onChange={(patch) => patchProps(patch)}
             />
           </PreviewToolbarLayout>,
           toolbarSlot,

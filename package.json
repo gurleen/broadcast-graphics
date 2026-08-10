@@ -6,9 +6,10 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "bun run dev-server.ts",
+    "dev": "bun --hot run dev-server.ts",
     "predev": "bun run build:ui",
     "generate-routes": "tsr generate",
+    "test": "bun test",
     "build": "vite build",
     "prebuild": "bun run build:ui",
     "build:ui": "npm --prefix ui ci && npm --prefix ui run build",
@@ -27,6 +28,7 @@
     "@tanstack/react-router-devtools": "latest",
     "@tanstack/react-start": "latest",
     "clsx": "^2.1.1",
+    "hono": "^4.13.1",
     "motion": "^12.43.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

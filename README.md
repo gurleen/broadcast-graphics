@@ -16,7 +16,7 @@ bun run dev
 
 Design tokens from `@gurleen-ui/tokens` are loaded once in [`src/routes/__root.tsx`](src/routes/__root.tsx). Use components via `@gurleen-ui/core` and `@gurleen-ui/broadcast`.
 
-Dev runs `dev-server.ts`: Bun serves on port 3000 and proxies to Vite on 5173.
+Dev runs `dev-server.ts`: Bun serves on port 3000 and proxies to Vite on 5173. The graphics control plane (REST + WebSocket) is mounted at `/api/control`.
 
 # Building For Production
 
@@ -25,6 +25,62 @@ To build this application for production:
 ```bash
 bun --bun run build
 ```
+
+## Graphics control plane
+
+The control server owns rundowns and graphic instances (props + playout intent) in SQLite (`data/controller.db`, overridable via `CONTROLLER_DB`). Renderers and a future control UI sync over WebSocket.
+
+**Full reference:** [docs/control-plane.md](docs/control-plane.md) (architecture, protocol, commands, hooks, templates).
+
+### REST (summary)
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/control/health` | Liveness + protocol version |
+| `GET` | `/api/control/templates` | Registered templates (defaults, fields, JSON Schema) |
+| `GET` | `/api/control/rundowns` | List rundowns |
+| `POST` | `/api/control/rundowns` | Create rundown `{ name }` |
+| `GET` | `/api/control/rundowns/:id` | Full snapshot (rundown, instances, renderers) |
+| `POST` | `/api/control/rundowns/:id/commands` | Apply one command or `{ commands: [...] }` |
+
+Example:
+
+```bash
+# Create a rundown and add a lower third
+curl -s -X POST localhost:3000/api/control/rundowns -H 'content-type: application/json' -d '{"name":"Show"}'
+curl -s -X POST localhost:3000/api/control/rundowns/$ID/commands -H 'content-type: application/json' \
+  -d '{"type":"instance.add","templateId":"labor-of-love-lower-third","label":"L3_001"}'
+curl -s -X POST localhost:3000/api/control/rundowns/$ID/commands -H 'content-type: application/json' \
+  -d '{"type":"playout.in","instanceId":"$INSTANCE_ID"}'
+```
+
+Open the graphic as a browser source with control params:
+
+`/graphics/labor-of-love/lower-third?rundown=$ID&instance=$INSTANCE_ID`
+
+Or the composite renderer for a whole rundown:
+
+`/render/$ID`
+
+### WebSocket / hooks (summary)
+
+Connect to `ws(s)://{host}/api/control/ws`, then send:
+
+```json
+{ "type": "hello", "role": "control", "rundownId": "...", "protocolVersion": 1 }
+```
+
+Client hooks live in `#/control/client`:
+
+- `useRundownController(rundownId)` — API for a future control UI
+- `useControlledGraphic(template)` — drop-in for graphic routes (local preview without search params; server-driven with `?rundown=&instance=`)
+
+### Follow-ups
+
+- Control UI (not in this pass)
+- Server-authoritative game clocks so multiple browser sources do not drift (scorebug clock is still local `setInterval` today)
+
+Production must be started with Bun (`bun run start`), not Node, because the control plane uses `bun:sqlite`.
 
 ## Styling
 

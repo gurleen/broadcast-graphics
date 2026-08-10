@@ -1,11 +1,11 @@
 /**
- * Dev entry: Bun on :3000 fronting Vite on :5173.
+ * Dev entry: Bun on :3000 fronting Vite on :5173, plus the Hono control plane.
  *
- * WebSocket upgrades (Vite HMR, TanStack devtools, etc.) are proxied to Vite
- * by opening an outbound WebSocket and piping frames both ways. Plain HTTP
- * requests are forwarded with `fetch()`.
+ * WebSocket upgrades for Vite HMR are proxied (tagged `kind: 'vite-proxy'`).
+ * Control-plane WS upgrades (`/api/control/ws`) go through Hono's handler.
  */
 import { createServer as createViteServer } from 'vite'
+import { app as controlApp, websocket as controlWebsocket } from './server/app'
 
 const PUBLIC_PORT = Number(process.env.PORT ?? 3000)
 const VITE_PORT = Number(process.env.VITE_DEV_PORT ?? 5173)
@@ -25,19 +25,33 @@ await vite.listen()
 vite.printUrls()
 
 type ViteProxyConn = {
+  kind: 'vite-proxy'
   targetUrl: string
   protocol: string | undefined
   upstream: WebSocket | null
   queue: (string | BufferSource)[]
 }
 
-Bun.serve<ViteProxyConn, object>({
+type WsData = ViteProxyConn | { events: unknown; url: URL; protocol: string }
+
+function isViteProxy(data: WsData): data is ViteProxyConn {
+  return (data as ViteProxyConn).kind === 'vite-proxy'
+}
+
+Bun.serve<WsData, object>({
   port: PUBLIC_PORT,
   fetch(request, server) {
     const url = new URL(request.url)
 
+    // Control plane (REST + WS upgrade) — pass the Bun server as env so
+    // hono/bun's upgradeWebSocket can call server.upgrade().
+    if (url.pathname.startsWith('/api/control')) {
+      return controlApp.fetch(request, server)
+    }
+
     if (request.headers.get('upgrade')?.toLowerCase() === 'websocket') {
       const data: ViteProxyConn = {
+        kind: 'vite-proxy',
         targetUrl: `${VITE_WS_ORIGIN}${url.pathname}${url.search}`,
         protocol: request.headers.get('sec-websocket-protocol') ?? undefined,
         upstream: null,
@@ -52,39 +66,52 @@ Bun.serve<ViteProxyConn, object>({
   },
   websocket: {
     open(ws) {
-      const data = ws.data
-      const upstream = new WebSocket(data.targetUrl, data.protocol)
-      upstream.binaryType = 'arraybuffer'
-      data.upstream = upstream
+      if (isViteProxy(ws.data)) {
+        const data = ws.data
+        const upstream = new WebSocket(data.targetUrl, data.protocol)
+        upstream.binaryType = 'arraybuffer'
+        data.upstream = upstream
 
-      upstream.onopen = () => {
-        for (const message of data.queue) upstream.send(message)
-        data.queue.length = 0
+        upstream.onopen = () => {
+          for (const message of data.queue) upstream.send(message)
+          data.queue.length = 0
+        }
+        upstream.onmessage = (event) => {
+          ws.send(event.data as string | ArrayBuffer)
+        }
+        upstream.onclose = (event) => {
+          ws.close(event.code, event.reason)
+        }
+        upstream.onerror = () => {
+          ws.close(1011, 'Upstream WebSocket error')
+        }
+        return
       }
-      upstream.onmessage = (event) => {
-        ws.send(event.data as string | ArrayBuffer)
-      }
-      upstream.onclose = (event) => {
-        ws.close(event.code, event.reason)
-      }
-      upstream.onerror = () => {
-        ws.close(1011, 'Upstream WebSocket error')
-      }
+      controlWebsocket.open(ws as never)
     },
     message(ws, message) {
-      const data = ws.data
-      const payload: string | BufferSource =
-        typeof message === 'string' ? message : new Uint8Array(message)
-      if (data.upstream && data.upstream.readyState === WebSocket.OPEN) {
-        data.upstream.send(payload)
-      } else {
-        data.queue.push(payload)
+      if (isViteProxy(ws.data)) {
+        const data = ws.data
+        const payload: string | BufferSource =
+          typeof message === 'string' ? message : new Uint8Array(message)
+        if (data.upstream && data.upstream.readyState === WebSocket.OPEN) {
+          data.upstream.send(payload)
+        } else {
+          data.queue.push(payload)
+        }
+        return
       }
+      controlWebsocket.message(ws as never, message as never)
     },
-    close(ws) {
-      ws.data.upstream?.close()
+    close(ws, code, reason) {
+      if (isViteProxy(ws.data)) {
+        ws.data.upstream?.close()
+        return
+      }
+      controlWebsocket.close(ws as never, code, reason)
     },
   },
 })
 
 console.log(`[broadcast-graphics] public http://localhost:${PUBLIC_PORT} → vite ${VITE_ORIGIN}`)
+console.log(`[broadcast-graphics] control plane at /api/control`)

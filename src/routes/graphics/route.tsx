@@ -9,6 +9,8 @@ export const Route = createFileRoute('/graphics')({
       search.scale != null && search.scale !== ''
         ? Number(search.scale)
         : undefined,
+    rundown: typeof search.rundown === 'string' && search.rundown ? search.rundown : undefined,
+    instance: typeof search.instance === 'string' && search.instance ? search.instance : undefined,
   }),
   component: GraphicsLayout,
 })

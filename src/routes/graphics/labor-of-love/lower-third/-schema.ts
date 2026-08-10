@@ -13,10 +13,12 @@ export const laborOfLoveLowerThirdSchema = z.object({
 export const laborOfLoveLowerThirdTemplateSchema: TemplateSchema<LaborOfLoveLowerThirdProps> = {
   id: 'labor-of-love-lower-third',
   name: 'Labor of Love Lower Third',
+  route: '/graphics/labor-of-love/lower-third',
   schema: laborOfLoveLowerThirdSchema,
   defaults: laborOfLoveLowerThirdProps,
   fields: {
     championshipName: { label: 'Championship', section: 'TEMPLATE DATA' },
     workerName: { label: 'Worker', section: 'TEMPLATE DATA' },
   },
+  transition: { inMs: 1000, outMs: 750 },
 }

@@ -33,10 +33,12 @@ export const laborOfLoveBracketSchema = z.object({
 export const laborOfLoveBracketTemplateSchema: TemplateSchema<LaborOfLoveBracketProps> = {
   id: 'labor-of-love-bracket',
   name: 'Labor of Love Bracket',
+  route: '/graphics/labor-of-love/bracket',
   schema: laborOfLoveBracketSchema,
   defaults: laborOfLoveBracketProps,
   fields: {
     eventName: { label: 'Event', section: 'TEMPLATE DATA' },
     bracketName: { label: 'Bracket', section: 'TEMPLATE DATA' },
   },
+  transition: { inMs: 600, outMs: 400 },
 }

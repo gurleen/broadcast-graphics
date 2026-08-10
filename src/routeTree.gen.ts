@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GraphicsRouteRouteImport } from './routes/graphics/route'
+import { Route as RenderRundownIdRouteImport } from './routes/render/$rundownId'
 import { Route as GraphicsDrexelBasketballScorebugRouteRouteImport } from './routes/graphics/drexel/basketball-scorebug/route'
 import { Route as GraphicsLaborOfLoveBracketRouteRouteImport } from './routes/graphics/labor-of-love/bracket/route'
 import { Route as GraphicsLaborOfLoveLowerThirdRouteRouteImport } from './routes/graphics/labor-of-love/lower-third/route'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const GraphicsRouteRoute = GraphicsRouteRouteImport.update({
   id: '/graphics',
   path: '/graphics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RenderRundownIdRoute = RenderRundownIdRouteImport.update({
+  id: '/render/$rundownId',
+  path: '/render/$rundownId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GraphicsDrexelBasketballScorebugRouteRoute =
@@ -47,6 +53,7 @@ const GraphicsLaborOfLoveLowerThirdRouteRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/graphics': typeof GraphicsRouteRouteWithChildren
+  '/render/$rundownId': typeof RenderRundownIdRoute
   '/graphics/drexel/basketball-scorebug': typeof GraphicsDrexelBasketballScorebugRouteRoute
   '/graphics/labor-of-love/bracket': typeof GraphicsLaborOfLoveBracketRouteRoute
   '/graphics/labor-of-love/lower-third': typeof GraphicsLaborOfLoveLowerThirdRouteRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/graphics': typeof GraphicsRouteRouteWithChildren
+  '/render/$rundownId': typeof RenderRundownIdRoute
   '/graphics/drexel/basketball-scorebug': typeof GraphicsDrexelBasketballScorebugRouteRoute
   '/graphics/labor-of-love/bracket': typeof GraphicsLaborOfLoveBracketRouteRoute
   '/graphics/labor-of-love/lower-third': typeof GraphicsLaborOfLoveLowerThirdRouteRoute
@@ -62,6 +70,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/graphics': typeof GraphicsRouteRouteWithChildren
+  '/render/$rundownId': typeof RenderRundownIdRoute
   '/graphics/drexel/basketball-scorebug': typeof GraphicsDrexelBasketballScorebugRouteRoute
   '/graphics/labor-of-love/bracket': typeof GraphicsLaborOfLoveBracketRouteRoute
   '/graphics/labor-of-love/lower-third': typeof GraphicsLaborOfLoveLowerThirdRouteRoute
@@ -71,6 +80,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/graphics'
+    | '/render/$rundownId'
     | '/graphics/drexel/basketball-scorebug'
     | '/graphics/labor-of-love/bracket'
     | '/graphics/labor-of-love/lower-third'
@@ -78,6 +88,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/graphics'
+    | '/render/$rundownId'
     | '/graphics/drexel/basketball-scorebug'
     | '/graphics/labor-of-love/bracket'
     | '/graphics/labor-of-love/lower-third'
@@ -85,6 +96,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/graphics'
+    | '/render/$rundownId'
     | '/graphics/drexel/basketball-scorebug'
     | '/graphics/labor-of-love/bracket'
     | '/graphics/labor-of-love/lower-third'
@@ -93,6 +105,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GraphicsRouteRoute: typeof GraphicsRouteRouteWithChildren
+  RenderRundownIdRoute: typeof RenderRundownIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -109,6 +122,13 @@ declare module '@tanstack/react-router' {
       path: '/graphics'
       fullPath: '/graphics'
       preLoaderRoute: typeof GraphicsRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/render/$rundownId': {
+      id: '/render/$rundownId'
+      path: '/render/$rundownId'
+      fullPath: '/render/$rundownId'
+      preLoaderRoute: typeof RenderRundownIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/graphics/drexel/basketball-scorebug': {
@@ -156,16 +176,8 @@ const GraphicsRouteRouteWithChildren = GraphicsRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GraphicsRouteRoute: GraphicsRouteRouteWithChildren,
+  RenderRundownIdRoute: RenderRundownIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

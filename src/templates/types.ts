@@ -21,12 +21,22 @@ export type FieldDef = {
   section?: string
 }
 
+export type TemplateTransition = {
+  /** Approximate enter animation duration in ms (used for phase inference). */
+  inMs: number
+  /** Approximate exit animation duration in ms (used for phase inference). */
+  outMs: number
+}
+
 export type TemplateSchema<TProps extends Record<string, unknown>> = {
   id: string
   name: string
+  /** Renderer page path, e.g. `/graphics/labor-of-love/lower-third`. */
+  route: string
   schema: z.ZodType<TProps>
   defaults: TProps
   fields?: { [K in keyof TProps & string]?: FieldDef }
+  transition?: TemplateTransition
 }
 
 export type TemplateRenderProps<TProps> = {
