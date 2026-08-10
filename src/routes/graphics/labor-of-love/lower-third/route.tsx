@@ -1,6 +1,7 @@
 import { useLayoutEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { createFileRoute, getRouteApi } from '@tanstack/react-router'
+import { PreviewToolbarLayout } from '#/graphics/preview/PreviewToolbarLayout'
 import { PREVIEW_TOOLBAR_SLOT_ID } from '#/graphics/GraphicStage'
 import { LaborOfLoveLowerThirdGraphic } from './-Graphic'
 import { PreviewToolbarControls } from './-PreviewToolbarControls'
@@ -33,27 +34,13 @@ function LaborOfLoveLowerThird() {
       <LaborOfLoveLowerThirdGraphic props={graphicState} onScreen={onScreen} />
       {toolbarSlot &&
         createPortal(
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <button
-              type="button"
-              className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500"
-              onClick={() => setOnScreen(true)}
-            >
-              In
-            </button>
-            <button
-              type="button"
-              className="rounded-md bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600"
-              onClick={() => setOnScreen(false)}
-            >
-              Out
-            </button>
+          <PreviewToolbarLayout onIn={() => setOnScreen(true)} onOut={() => setOnScreen(false)}>
             <PreviewToolbarControls
               workerName={graphicState.workerName}
               championshipName={graphicState.championshipName}
               onChange={(patch) => setGraphicState((prev) => ({ ...prev, ...patch }))}
             />
-          </div>,
+          </PreviewToolbarLayout>,
           toolbarSlot,
         )}
     </>

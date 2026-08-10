@@ -7,12 +7,18 @@
   },
   "scripts": {
     "dev": "bun run dev-server.ts",
+    "predev": "bun run build:ui",
     "generate-routes": "tsr generate",
     "build": "vite build",
+    "prebuild": "bun run build:ui",
+    "build:ui": "npm --prefix ui ci && npm --prefix ui run build",
     "start": "bun run serve.ts",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@gurleen-ui/broadcast": "file:ui/packages/broadcast",
+    "@gurleen-ui/core": "file:ui/packages/core",
+    "@gurleen-ui/tokens": "file:ui/packages/tokens",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.7.0",
     "@tailwindcss/vite": "^4.1.18",
@@ -39,6 +45,10 @@
     "@vitejs/plugin-react": "^6.0.1",
     "typescript": "^6.0.2",
     "vite": "^8.0.0"
+  },
+  "overrides": {
+    "@gurleen-ui/core": "file:ui/packages/core",
+    "@gurleen-ui/tokens": "file:ui/packages/tokens"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

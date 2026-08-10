@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, type CSSProperties } from 'react'
+import { Button, FieldRow, Input, Panel } from '@gurleen-ui/core'
 import type { TemplateControlsProps } from '#/templates/types'
 import {
   resolveBracket,
@@ -8,11 +9,12 @@ import {
   type ResolvedMatch,
 } from './-types'
 
-const btn =
-  'rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs font-medium text-slate-100 hover:bg-slate-700 disabled:opacity-40'
-const btnAccent = `${btn} border-sky-600 bg-sky-800 hover:bg-sky-700`
-const input =
-  'min-w-[8rem] rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-slate-100'
+const rowCluster: CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  gap: 6,
+}
 
 function truncate(name: string, max = 18) {
   return name.length > max ? `${name.slice(0, max - 1)}…` : name
@@ -36,30 +38,27 @@ function MatchPicker({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 text-sm">
-      <span className="w-12 shrink-0 text-slate-400">{label}</span>
-      <div className="flex flex-wrap items-center gap-1">
-        <button
-          type="button"
-          className={winner === 'a' ? btnAccent : btn}
+    <FieldRow label={label}>
+      <div style={rowCluster}>
+        <Button
+          label={sideLabel('a')}
+          size="sm"
+          variant={winner === 'a' ? 'accent' : 'default'}
+          active={winner === 'a'}
           disabled={!match.a.team}
           onClick={() => onPick('a')}
-        >
-          {sideLabel('a')}
-        </button>
-        <button
-          type="button"
-          className={winner === 'b' ? btnAccent : btn}
+        />
+        <Button
+          label={sideLabel('b')}
+          size="sm"
+          variant={winner === 'b' ? 'accent' : 'default'}
+          active={winner === 'b'}
           disabled={!match.b.team}
           onClick={() => onPick('b')}
-        >
-          {sideLabel('b')}
-        </button>
-        <button type="button" className={btn} onClick={() => onPick(null)}>
-          CLEAR
-        </button>
+        />
+        <Button label="Clear" size="sm" onClick={() => onPick(null)} />
       </div>
-    </div>
+    </FieldRow>
   )
 }
 
@@ -78,23 +77,21 @@ export function LaborOfLoveBracketControls({
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="w-12 shrink-0 text-slate-400">Event</span>
-        <input
-          className={input}
+    <Panel title="Bracket preview">
+      <FieldRow label="Event">
+        <Input
           value={props.eventName}
-          onChange={(e) => patch({ eventName: e.target.value })}
+          onChange={(value: string) => patch({ eventName: value })}
+          width={200}
         />
-      </div>
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="w-12 shrink-0 text-slate-400">Bracket</span>
-        <input
-          className={input}
+      </FieldRow>
+      <FieldRow label="Bracket">
+        <Input
           value={props.bracketName}
-          onChange={(e) => patch({ bracketName: e.target.value })}
+          onChange={(value: string) => patch({ bracketName: value })}
+          width={200}
         />
-      </div>
+      </FieldRow>
       {resolved.qf.map((match, index) => (
         <MatchPicker
           key={`qf-${index}`}
@@ -114,12 +111,12 @@ export function LaborOfLoveBracketControls({
         />
       ))}
       <MatchPicker
-        label="FINAL"
+        label="Final"
         match={resolved.final}
         winner={props.winners.final}
         onPick={(winner) => setWinner('final', 0, winner)}
       />
-    </div>
+    </Panel>
   )
 }
 

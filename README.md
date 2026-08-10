@@ -2,12 +2,19 @@ Welcome to your new TanStack Start app!
 
 # Getting Started
 
+This repo vendors the [@gurleen-ui](https://github.com/gurleen/ui) component libraries as a git submodule at `ui/`.
+
 To run this application:
 
 ```bash
+git submodule update --init --recursive   # if you cloned without --recurse-submodules
 bun install
 bun run dev
 ```
+
+`predev` and `prebuild` run `build:ui`, which installs and builds the submodule (`npm ci` + `npm run build` inside `ui/`). You can run that step alone with `bun run build:ui` after updating the submodule.
+
+Design tokens from `@gurleen-ui/tokens` are loaded once in [`src/routes/__root.tsx`](src/routes/__root.tsx). Use components via `@gurleen-ui/core` and `@gurleen-ui/broadcast`.
 
 Dev runs `dev-server.ts`: Bun serves on port 3000 and proxies to Vite on 5173.
 

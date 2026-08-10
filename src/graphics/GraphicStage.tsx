@@ -74,7 +74,15 @@ export function GraphicStage({
       {preview ? (
         <div
           id={PREVIEW_TOOLBAR_SLOT_ID}
-          className="flex shrink-0 justify-center gap-3 border-t border-slate-700/80 bg-slate-900/95 p-4 backdrop-blur-sm"
+          style={{
+            display: 'flex',
+            flexShrink: 0,
+            justifyContent: 'center',
+            gap: 12,
+            borderTop: '1px solid var(--border)',
+            background: 'var(--bg-1)',
+            padding: 16,
+          }}
         />
       ) : null}
     </div>

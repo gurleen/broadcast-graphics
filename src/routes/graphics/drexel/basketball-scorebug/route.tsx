@@ -7,7 +7,14 @@ import { LowerThird } from '#/html/LowerThird'
 import { Column, Row, Text, TexturedRect, BoundedImage } from '#/html/ui'
 import { Colors, DefaultShadow, DefaultTextShadow } from '#/graphics/colors'
 import { PREVIEW_TOOLBAR_SLOT_ID } from '#/graphics/GraphicStage'
+import { PreviewToolbarLayout } from '#/graphics/preview/PreviewToolbarLayout'
 import { darkenColor, toCssGradient } from '#/html/ui/gradient'
+import { PreviewToolbarControls } from './-PreviewToolbarControls'
+import {
+  basketballScorebugDefaultProps,
+  type BasketballScorebugProps,
+  type BasketballScorebugTeam,
+} from './-types'
 
 export const Route = createFileRoute('/graphics/drexel/basketball-scorebug')({
     component: BasketballScorebugGraphic,
@@ -97,37 +104,8 @@ const infoAreaVariants = {
 
 const getLogoUrl = (team: string) => `https://images.dragonstv.io/logos-knockout/${team}.PNG`;
 
-export type BasketballScorebugTeam = {
-    teamCode: string
-    primaryColor: string
-    score: number | string
-}
-
-export type BasketballScorebugProps = {
-    home: BasketballScorebugTeam
-    away: BasketballScorebugTeam
-    clock: string
-    period: string
-    shotClock: number | string
-    shotClockColor?: string
-}
-
-export const basketballScorebugDefaultProps: BasketballScorebugProps = {
-    home: {
-        teamCode: 'DREXEL',
-        primaryColor: Colors.DrexelPrimary,
-        score: 88,
-    },
-    away: {
-        teamCode: 'DELAWARE',
-        primaryColor: Colors.DrexelSecondary,
-        score: 88,
-    },
-    clock: '10:36',
-    period: '2ND',
-    shotClock: 24,
-    shotClockColor: Colors.DrexelSecondary,
-}
+export type { BasketballScorebugProps, BasketballScorebugTeam } from './-types'
+export { basketballScorebugDefaultProps } from './-types'
 
 const teamGradient = (color: string, angle: number) =>
     toCssGradient({
@@ -137,8 +115,6 @@ const teamGradient = (color: string, angle: number) =>
         ],
         angle,
     })
-
-const PERIOD_OPTIONS = ['1ST', '2ND', 'HALF', '3RD', '4TH', 'OT', '2OT'] as const
 
 function clockToSeconds(clock: string): number {
     const [minutes, seconds] = clock.split(':').map((part) => Number.parseInt(part, 10))
@@ -156,119 +132,6 @@ function secondsToClock(totalSeconds: number): string {
 function numericScore(score: number | string): number {
     const value = typeof score === 'number' ? score : Number.parseInt(score, 10)
     return Number.isFinite(value) ? value : 0
-}
-
-const toolbarButtonClass =
-    'rounded-md bg-slate-700 px-2.5 py-1.5 text-sm font-medium text-white hover:bg-slate-600 disabled:opacity-40'
-
-function PreviewToolbarControls({
-    state,
-    clockRunning,
-    onClockRunningChange,
-    onStateChange,
-}: {
-    state: BasketballScorebugProps
-    clockRunning: boolean
-    onClockRunningChange: (running: boolean) => void
-    onStateChange: (patch: Partial<BasketballScorebugProps> | ((prev: BasketballScorebugProps) => BasketballScorebugProps)) => void
-}) {
-    const bumpScore = (side: 'home' | 'away', delta: number) => {
-        onStateChange((prev) => ({
-            ...prev,
-            [side]: {
-                ...prev[side],
-                score: Math.max(0, numericScore(prev[side].score) + delta),
-            },
-        }))
-    }
-
-    const bumpShotClock = (delta: number) => {
-        onStateChange((prev) => ({
-            ...prev,
-            shotClock: Math.max(0, numericScore(prev.shotClock) + delta),
-        }))
-    }
-
-    return (
-        <div className="flex max-w-[min(100vw,72rem)] flex-wrap items-center justify-center gap-x-4 gap-y-3 border-l border-slate-600 pl-4">
-            <div className="flex items-center gap-2">
-                <span className="text-xs font-medium uppercase tracking-wide text-slate-400">Away</span>
-                <button type="button" className={toolbarButtonClass} onClick={() => bumpScore('away', -1)}>
-                    −
-                </button>
-                <span className="min-w-[2ch] text-center text-sm tabular-nums text-white">
-                    {state.away.score}
-                </span>
-                <button type="button" className={toolbarButtonClass} onClick={() => bumpScore('away', 1)}>
-                    +
-                </button>
-            </div>
-            <div className="flex items-center gap-2">
-                <span className="text-xs font-medium uppercase tracking-wide text-slate-400">Home</span>
-                <button type="button" className={toolbarButtonClass} onClick={() => bumpScore('home', -1)}>
-                    −
-                </button>
-                <span className="min-w-[2ch] text-center text-sm tabular-nums text-white">
-                    {state.home.score}
-                </span>
-                <button type="button" className={toolbarButtonClass} onClick={() => bumpScore('home', 1)}>
-                    +
-                </button>
-            </div>
-            <label className="flex items-center gap-2">
-                <span className="text-xs font-medium uppercase tracking-wide text-slate-400">Period</span>
-                <select
-                    className="rounded-md border border-slate-600 bg-slate-800 px-2 py-1.5 text-sm text-white"
-                    value={state.period}
-                    onChange={(e) => onStateChange({ period: e.target.value })}
-                >
-                    {PERIOD_OPTIONS.map((option) => (
-                        <option key={option} value={option}>
-                            {option}
-                        </option>
-                    ))}
-                </select>
-            </label>
-            <div className="flex items-center gap-2">
-                <span className="text-xs font-medium uppercase tracking-wide text-slate-400">Clock</span>
-                <span className="min-w-14 text-center text-sm tabular-nums text-white">{state.clock}</span>
-                <button
-                    type="button"
-                    className={toolbarButtonClass}
-                    onClick={() => onClockRunningChange(!clockRunning)}
-                >
-                    {clockRunning ? 'Stop' : 'Start'}
-                </button>
-                <button
-                    type="button"
-                    className={toolbarButtonClass}
-                    onClick={() => {
-                        onClockRunningChange(false)
-                        onStateChange({ clock: basketballScorebugDefaultProps.clock })
-                    }}
-                >
-                    Reset
-                </button>
-            </div>
-            <div className="flex items-center gap-2">
-                <span className="text-xs font-medium uppercase tracking-wide text-slate-400">Shot</span>
-                <button type="button" className={toolbarButtonClass} onClick={() => bumpShotClock(-1)}>
-                    −
-                </button>
-                <span className="min-w-[2ch] text-center text-sm tabular-nums text-white">{state.shotClock}</span>
-                <button type="button" className={toolbarButtonClass} onClick={() => bumpShotClock(1)}>
-                    +
-                </button>
-                <button
-                    type="button"
-                    className={toolbarButtonClass}
-                    onClick={() => onStateChange({ shotClock: basketballScorebugDefaultProps.shotClock })}
-                >
-                    Reset
-                </button>
-            </div>
-        </div>
-    )
 }
 
 function InfoArea({
@@ -394,21 +257,7 @@ function BasketballScorebugGraphic() {
             </HtmlCanvas>
             {toolbarSlot &&
                 createPortal(
-                    <div className="flex flex-wrap items-center justify-center gap-3">
-                        <button
-                            type="button"
-                            className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500"
-                            onClick={() => setOnScreen(true)}
-                        >
-                            In
-                        </button>
-                        <button
-                            type="button"
-                            className="rounded-md bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600"
-                            onClick={() => setOnScreen(false)}
-                        >
-                            Out
-                        </button>
+                    <PreviewToolbarLayout onIn={() => setOnScreen(true)} onOut={() => setOnScreen(false)}>
                         <PreviewToolbarControls
                             state={graphicState}
                             clockRunning={clockRunning}
@@ -421,7 +270,7 @@ function BasketballScorebugGraphic() {
                                 }
                             }}
                         />
-                    </div>,
+                    </PreviewToolbarLayout>,
                     toolbarSlot,
                 )}
         </>
