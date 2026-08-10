@@ -1,5 +1,5 @@
 {
-  "projectName": "dtv-graphics-2027",
+  "projectName": "broadcast-graphics",
   "mode": "file-router",
   "typescript": true,
   "packageManager": "bun",

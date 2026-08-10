@@ -10,7 +10,7 @@ function Home() {
 
   return (
     <div className="page-shell p-8">
-      <h1 className="text-4xl font-bold">DTV Graphics 2027</h1>
+      <h1 className="text-4xl font-bold">Broadcast Graphics</h1>
       <p className="mt-4 max-w-2xl text-lg text-slate-300">
         Broadcast graphics at 1920×1080 with transparent backgrounds. Each graphic
         is fully self-contained in{' '}

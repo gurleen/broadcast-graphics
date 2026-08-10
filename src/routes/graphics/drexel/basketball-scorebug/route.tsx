@@ -9,8 +9,8 @@ import { Colors, DefaultShadow, DefaultTextShadow } from '#/graphics/colors'
 import { PREVIEW_TOOLBAR_SLOT_ID } from '#/graphics/GraphicStage'
 import { darkenColor, toCssGradient } from '#/html/ui/gradient'
 
-export const Route = createFileRoute('/graphics/example-html')({
-    component: ExampleGraphic,
+export const Route = createFileRoute('/graphics/drexel/basketball-scorebug')({
+    component: BasketballScorebugGraphic,
 })
 
 const graphicsRoute = getRouteApi('/graphics')
@@ -97,22 +97,22 @@ const infoAreaVariants = {
 
 const getLogoUrl = (team: string) => `https://images.dragonstv.io/logos-knockout/${team}.PNG`;
 
-export type ExampleHtmlTeam = {
+export type BasketballScorebugTeam = {
     teamCode: string
     primaryColor: string
     score: number | string
 }
 
-export type ExampleHtmlGraphicProps = {
-    home: ExampleHtmlTeam
-    away: ExampleHtmlTeam
+export type BasketballScorebugProps = {
+    home: BasketballScorebugTeam
+    away: BasketballScorebugTeam
     clock: string
     period: string
     shotClock: number | string
     shotClockColor?: string
 }
 
-export const exampleHtmlGraphicProps: ExampleHtmlGraphicProps = {
+export const basketballScorebugDefaultProps: BasketballScorebugProps = {
     home: {
         teamCode: 'DREXEL',
         primaryColor: Colors.DrexelPrimary,
@@ -167,10 +167,10 @@ function PreviewToolbarControls({
     onClockRunningChange,
     onStateChange,
 }: {
-    state: ExampleHtmlGraphicProps
+    state: BasketballScorebugProps
     clockRunning: boolean
     onClockRunningChange: (running: boolean) => void
-    onStateChange: (patch: Partial<ExampleHtmlGraphicProps> | ((prev: ExampleHtmlGraphicProps) => ExampleHtmlGraphicProps)) => void
+    onStateChange: (patch: Partial<BasketballScorebugProps> | ((prev: BasketballScorebugProps) => BasketballScorebugProps)) => void
 }) {
     const bumpScore = (side: 'home' | 'away', delta: number) => {
         onStateChange((prev) => ({
@@ -244,7 +244,7 @@ function PreviewToolbarControls({
                     className={toolbarButtonClass}
                     onClick={() => {
                         onClockRunningChange(false)
-                        onStateChange({ clock: exampleHtmlGraphicProps.clock })
+                        onStateChange({ clock: basketballScorebugDefaultProps.clock })
                     }}
                 >
                     Reset
@@ -262,7 +262,7 @@ function PreviewToolbarControls({
                 <button
                     type="button"
                     className={toolbarButtonClass}
-                    onClick={() => onStateChange({ shotClock: exampleHtmlGraphicProps.shotClock })}
+                    onClick={() => onStateChange({ shotClock: basketballScorebugDefaultProps.shotClock })}
                 >
                     Reset
                 </button>
@@ -276,7 +276,7 @@ function InfoArea({
     period,
     shotClock,
     shotClockColor = Colors.DrexelSecondary,
-}: Pick<ExampleHtmlGraphicProps, 'clock' | 'period' | 'shotClock' | 'shotClockColor'>) {
+}: Pick<BasketballScorebugProps, 'clock' | 'period' | 'shotClock' | 'shotClockColor'>) {
     return (
         <TexturedRect width={100} height={130} src="/textures/brushed-metal.png" overlayOpacity={0.75} overlay={Colors.Black} className='rounded-r-xl'
             border={2} borderColor={Colors.Black}>
@@ -289,7 +289,7 @@ function InfoArea({
     );
 }
 
-function TeamBox({ side, team }: { side: 'home' | 'away'; team: ExampleHtmlTeam }) {
+function TeamBox({ side, team }: { side: 'home' | 'away'; team: BasketballScorebugTeam }) {
     const gradientAngle = side === 'home' ? 270 : -90;
     const gradient = teamGradient(team.primaryColor, gradientAngle);
     const roundedCorner = side === 'away' ? 'rounded-tl-xl' : 'rounded-bl-xl';
@@ -312,12 +312,12 @@ function TeamBox({ side, team }: { side: 'home' | 'away'; team: ExampleHtmlTeam 
     )
 }
 
-function ExampleGraphic() {
+function BasketballScorebugGraphic() {
     const { preview } = graphicsRoute.useSearch()
-    const [graphicState, setGraphicState] = useState<ExampleHtmlGraphicProps>(() => ({
-        ...exampleHtmlGraphicProps,
-        home: { ...exampleHtmlGraphicProps.home },
-        away: { ...exampleHtmlGraphicProps.away },
+    const [graphicState, setGraphicState] = useState<BasketballScorebugProps>(() => ({
+        ...basketballScorebugDefaultProps,
+        home: { ...basketballScorebugDefaultProps.home },
+        away: { ...basketballScorebugDefaultProps.away },
     }))
     const { home, away, clock, period, shotClock, shotClockColor } = graphicState
     const [onScreen, setOnScreen] = useState(true)

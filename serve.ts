@@ -46,7 +46,7 @@ async function main() {
     },
   })
 
-  console.log(`[dtv-graphics] http://localhost:${PORT}`)
+  console.log(`[broadcast-graphics] http://localhost:${PORT}`)
 }
 
 main().catch((err) => {

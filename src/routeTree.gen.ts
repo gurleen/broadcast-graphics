@@ -11,8 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GraphicsRouteRouteImport } from './routes/graphics/route'
-import { Route as GraphicsExampleRouteRouteImport } from './routes/graphics/example/route'
-import { Route as GraphicsExampleHtmlRouteRouteImport } from './routes/graphics/example-html/route'
+import { Route as GraphicsDrexelBasketballScorebugRouteRouteImport } from './routes/graphics/drexel/basketball-scorebug/route'
 import { Route as GraphicsLaborOfLoveBracketRouteRouteImport } from './routes/graphics/labor-of-love/bracket/route'
 import { Route as GraphicsLaborOfLoveLowerThirdRouteRouteImport } from './routes/graphics/labor-of-love/lower-third/route'
 
@@ -26,15 +25,10 @@ const GraphicsRouteRoute = GraphicsRouteRouteImport.update({
   path: '/graphics',
   getParentRoute: () => rootRouteImport,
 } as any)
-const GraphicsExampleRouteRoute = GraphicsExampleRouteRouteImport.update({
-  id: '/example',
-  path: '/example',
-  getParentRoute: () => GraphicsRouteRoute,
-} as any)
-const GraphicsExampleHtmlRouteRoute =
-  GraphicsExampleHtmlRouteRouteImport.update({
-    id: '/example-html',
-    path: '/example-html',
+const GraphicsDrexelBasketballScorebugRouteRoute =
+  GraphicsDrexelBasketballScorebugRouteRouteImport.update({
+    id: '/drexel/basketball-scorebug',
+    path: '/drexel/basketball-scorebug',
     getParentRoute: () => GraphicsRouteRoute,
   } as any)
 const GraphicsLaborOfLoveBracketRouteRoute =
@@ -53,16 +47,14 @@ const GraphicsLaborOfLoveLowerThirdRouteRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/graphics': typeof GraphicsRouteRouteWithChildren
-  '/graphics/example': typeof GraphicsExampleRouteRoute
-  '/graphics/example-html': typeof GraphicsExampleHtmlRouteRoute
+  '/graphics/drexel/basketball-scorebug': typeof GraphicsDrexelBasketballScorebugRouteRoute
   '/graphics/labor-of-love/bracket': typeof GraphicsLaborOfLoveBracketRouteRoute
   '/graphics/labor-of-love/lower-third': typeof GraphicsLaborOfLoveLowerThirdRouteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/graphics': typeof GraphicsRouteRouteWithChildren
-  '/graphics/example': typeof GraphicsExampleRouteRoute
-  '/graphics/example-html': typeof GraphicsExampleHtmlRouteRoute
+  '/graphics/drexel/basketball-scorebug': typeof GraphicsDrexelBasketballScorebugRouteRoute
   '/graphics/labor-of-love/bracket': typeof GraphicsLaborOfLoveBracketRouteRoute
   '/graphics/labor-of-love/lower-third': typeof GraphicsLaborOfLoveLowerThirdRouteRoute
 }
@@ -70,8 +62,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/graphics': typeof GraphicsRouteRouteWithChildren
-  '/graphics/example': typeof GraphicsExampleRouteRoute
-  '/graphics/example-html': typeof GraphicsExampleHtmlRouteRoute
+  '/graphics/drexel/basketball-scorebug': typeof GraphicsDrexelBasketballScorebugRouteRoute
   '/graphics/labor-of-love/bracket': typeof GraphicsLaborOfLoveBracketRouteRoute
   '/graphics/labor-of-love/lower-third': typeof GraphicsLaborOfLoveLowerThirdRouteRoute
 }
@@ -80,24 +71,21 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/graphics'
-    | '/graphics/example'
-    | '/graphics/example-html'
+    | '/graphics/drexel/basketball-scorebug'
     | '/graphics/labor-of-love/bracket'
     | '/graphics/labor-of-love/lower-third'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/graphics'
-    | '/graphics/example'
-    | '/graphics/example-html'
+    | '/graphics/drexel/basketball-scorebug'
     | '/graphics/labor-of-love/bracket'
     | '/graphics/labor-of-love/lower-third'
   id:
     | '__root__'
     | '/'
     | '/graphics'
-    | '/graphics/example'
-    | '/graphics/example-html'
+    | '/graphics/drexel/basketball-scorebug'
     | '/graphics/labor-of-love/bracket'
     | '/graphics/labor-of-love/lower-third'
   fileRoutesById: FileRoutesById
@@ -123,18 +111,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GraphicsRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/graphics/example': {
-      id: '/graphics/example'
-      path: '/example'
-      fullPath: '/graphics/example'
-      preLoaderRoute: typeof GraphicsExampleRouteRouteImport
-      parentRoute: typeof GraphicsRouteRoute
-    }
-    '/graphics/example-html': {
-      id: '/graphics/example-html'
-      path: '/example-html'
-      fullPath: '/graphics/example-html'
-      preLoaderRoute: typeof GraphicsExampleHtmlRouteRouteImport
+    '/graphics/drexel/basketball-scorebug': {
+      id: '/graphics/drexel/basketball-scorebug'
+      path: '/drexel/basketball-scorebug'
+      fullPath: '/graphics/drexel/basketball-scorebug'
+      preLoaderRoute: typeof GraphicsDrexelBasketballScorebugRouteRouteImport
       parentRoute: typeof GraphicsRouteRoute
     }
     '/graphics/labor-of-love/bracket': {
@@ -155,15 +136,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface GraphicsRouteRouteChildren {
-  GraphicsExampleRouteRoute: typeof GraphicsExampleRouteRoute
-  GraphicsExampleHtmlRouteRoute: typeof GraphicsExampleHtmlRouteRoute
+  GraphicsDrexelBasketballScorebugRouteRoute: typeof GraphicsDrexelBasketballScorebugRouteRoute
   GraphicsLaborOfLoveBracketRouteRoute: typeof GraphicsLaborOfLoveBracketRouteRoute
   GraphicsLaborOfLoveLowerThirdRouteRoute: typeof GraphicsLaborOfLoveLowerThirdRouteRoute
 }
 
 const GraphicsRouteRouteChildren: GraphicsRouteRouteChildren = {
-  GraphicsExampleRouteRoute: GraphicsExampleRouteRoute,
-  GraphicsExampleHtmlRouteRoute: GraphicsExampleHtmlRouteRoute,
+  GraphicsDrexelBasketballScorebugRouteRoute:
+    GraphicsDrexelBasketballScorebugRouteRoute,
   GraphicsLaborOfLoveBracketRouteRoute: GraphicsLaborOfLoveBracketRouteRoute,
   GraphicsLaborOfLoveLowerThirdRouteRoute:
     GraphicsLaborOfLoveLowerThirdRouteRoute,

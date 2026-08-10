@@ -87,4 +87,4 @@ Bun.serve<ViteProxyConn, object>({
   },
 })
 
-console.log(`[dtv-graphics] public http://localhost:${PUBLIC_PORT} → vite ${VITE_ORIGIN}`)
+console.log(`[broadcast-graphics] public http://localhost:${PUBLIC_PORT} → vite ${VITE_ORIGIN}`)
