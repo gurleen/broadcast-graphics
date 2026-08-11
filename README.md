@@ -25,7 +25,8 @@ Open **http://localhost:3000**. Dev runs [`dev-server.ts`](./dev-server.ts): Bun
 | `/` | Home launcher (`HYDRA // GFX`) |
 | `/control` | Operator UI — rundowns, playout, templates, renderers |
 | `/graphics/...` | Per-template graphic (OBS browser source) |
-| `/render/<rundownId>` | Composite renderer for a whole rundown |
+| `/render` | Default composite — follows the currently open rundown |
+| `/render/<rundownId>` | Composite renderer for a specific rundown |
 | `/api/control` | REST + WebSocket control plane |
 
 Brand chrome uses `@gurleen-ui` tokens. Graphics routes stay transparent for OBS (no opaque page background).
@@ -58,6 +59,8 @@ Rundowns and graphic instances (props + playout intent) live in SQLite (`data/co
 | `POST` | `/api/control/rundowns` | Create rundown `{ name }` |
 | `GET` | `/api/control/rundowns/:id` | Full snapshot |
 | `POST` | `/api/control/rundowns/:id/commands` | Apply command(s) |
+| `GET` | `/api/control/active-rundown` | Default `/render` target `{ rundownId }` |
+| `PUT` | `/api/control/active-rundown` | Set default target `{ rundownId }` |
 
 ```bash
 curl -s -X POST localhost:3000/api/control/rundowns \
@@ -68,7 +71,8 @@ curl -s -X POST localhost:3000/api/control/rundowns \
 Browser sources:
 
 - Single graphic: `/graphics/labor-of-love/lower-third?rundown=$ID&instance=$INSTANCE_ID`
-- Whole rundown: `/render/$ID`
+- Default composite (follows open rundown): `/render`
+- Specific rundown: `/render/$ID`
 
 Client hooks: `#/control/client` (`useRundownController`, `useControlledGraphic`, …).
 
@@ -97,7 +101,8 @@ bun run tauri:dev
 |---------|----------------------|
 | Home | `http://127.0.0.1:4737/` |
 | Control UI | `http://127.0.0.1:4737/control` |
-| Composite | `http://127.0.0.1:4737/render/<rundownId>` |
+| Composite (default) | `http://127.0.0.1:4737/render` |
+| Composite (fixed) | `http://127.0.0.1:4737/render/<rundownId>` |
 | Graphic | `http://127.0.0.1:4737/graphics/...` |
 
 Override port with `PORT`. Desktop SQLite uses the OS app-data directory (`CONTROLLER_DB`), not the read-only bundle.

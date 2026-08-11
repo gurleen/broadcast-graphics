@@ -117,7 +117,7 @@ function RenderersPage() {
       <Panel title="RENDERER SESSIONS" meta={String(renderers.length)} padded={false} style={{ flex: 1, minHeight: 0 }}>
         {sessionRows.length === 0 ? (
           <div style={{ padding: 16, fontSize: 11, color: 'var(--fg-3)' }}>
-            No renderer sessions connected. Open a graphic with ?rundown=&instance= or /render/{rundownId}.
+            No renderer sessions connected. Open a graphic with ?rundown=&instance=, /render, or /render/{rundownId}.
           </div>
         ) : (
           <DataGrid

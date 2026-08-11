@@ -2,7 +2,7 @@ import { getTemplateSchema } from '#/templates/schemas'
 import type { ControlCommand, ControlEvent } from '../protocol'
 import type { ProtocolError } from '../model'
 import * as store from './store'
-import { publishMany } from './hub'
+import { publish, publishMany } from './hub'
 
 export type CommandResult =
   | { ok: true; events: ControlEvent[]; rundownId: string | null }
@@ -69,11 +69,35 @@ export function applyCommand(command: ControlCommand): CommandResult {
     case 'rundown.delete': {
       const existing = store.getRundown(command.rundownId)
       if (!existing) return err('not_found', `Rundown ${command.rundownId} not found`)
+      const wasActive = store.getActiveRundownId() === command.rundownId
       store.deleteRundown(command.rundownId)
       const events: ControlEvent[] = [
         { type: 'rundown.removed', rundownId: command.rundownId },
       ]
       publishMany(command.rundownId, events)
+      if (wasActive) {
+        store.setActiveRundownId(null)
+        const clearEvent: ControlEvent = { type: 'activeRundown.changed', rundownId: null }
+        publish('*', clearEvent)
+        events.push(clearEvent)
+      }
+      return { ok: true, events, rundownId: command.rundownId }
+    }
+
+    case 'rundown.setActive': {
+      if (command.rundownId !== null) {
+        const rundown = store.getRundown(command.rundownId)
+        if (!rundown) return err('not_found', `Rundown ${command.rundownId} not found`)
+      }
+      const current = store.getActiveRundownId()
+      if (current === command.rundownId) {
+        return { ok: true, events: [], rundownId: command.rundownId }
+      }
+      store.setActiveRundownId(command.rundownId)
+      const events: ControlEvent[] = [
+        { type: 'activeRundown.changed', rundownId: command.rundownId },
+      ]
+      publishMany('*', events)
       return { ok: true, events, rundownId: command.rundownId }
     }
 

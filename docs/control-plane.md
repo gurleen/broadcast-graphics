@@ -22,9 +22,9 @@ Automation / curl ─REST┘         │
             bun:sqlite (durable)     in-memory renderers
 ```
 
-- **Durable state** (SQLite): rundowns, instances, props, playout intent (`in` / `out`).
+- **Durable state** (SQLite): rundowns, instances, props, playout intent (`in` / `out`), and the active rundown pointer for `/render`.
 - **Ephemeral state** (memory): connected renderer/control sessions and reported playback phases.
-- Every mutation goes through `applyCommand` → events published on an in-process hub → all WebSocket subscribers for that rundown.
+- Every mutation goes through `applyCommand` → events published on an in-process hub → all WebSocket subscribers for that rundown (global events like `packages.changed` / `activeRundown.changed` fan out to every session).
 
 Key paths:
 
@@ -46,6 +46,8 @@ Persistence: `data/controller.db` (gitignored), override with `CONTROLLER_DB` (`
 ### Rundown
 
 Named container of graphic instances. Holds an optional `cuedInstanceId` (PVW / next).
+
+Separately, the controller stores a single **active rundown id** (`meta.active_rundown_id`) used by the default composite at `/render`. Opening a rundown in the control UI sets this pointer (last open wins).
 
 ### Graphic instance
 
@@ -78,6 +80,8 @@ Base: `/api/control`
 | `POST` | `/rundowns` | Create `{ name }` |
 | `GET` | `/rundowns/:id` | Full snapshot |
 | `POST` | `/rundowns/:id/commands` | One command body, or `{ commands: [...] }` |
+| `GET` | `/active-rundown` | `{ rundownId }` for default `/render` |
+| `PUT` | `/active-rundown` | Set pointer `{ rundownId }` (`null` clears) |
 
 `rundownId` is injected from the URL when omitted on commands that need it.
 
@@ -136,16 +140,16 @@ Invalid frames produce an `ack`/`error` with `code` + `message`; the socket stay
 
 ### Commands
 
-`rundown.create` · `rundown.rename` · `rundown.delete`  
+`rundown.create` · `rundown.rename` · `rundown.delete` · `rundown.setActive`  
 `instance.add` · `instance.remove` · `instance.relabel` · `instance.reorder`  
 `instance.patchProps` · `instance.replaceProps` · `instance.resetProps`  
 `playout.cue` · `playout.take` · `playout.in` · `playout.out` · `playout.toggle` · `playout.clearAll` · `playout.panic`
 
 ### Events
 
-`rundown.upserted` · `rundown.removed`  
+`rundown.upserted` · `rundown.removed` · `activeRundown.changed`  
 `instance.upserted` · `instance.removed` · `instance.props` (delta for high-frequency edits)  
-`playout.changed` · `playout.panic` · `renderer.upserted` · `renderer.removed` · `error`
+`playout.changed` · `playout.panic` · `renderer.upserted` · `renderer.removed` · `packages.changed` · `error`
 
 ## Client hooks
 
@@ -186,7 +190,10 @@ Registered templates today:
 - `labor-of-love-bracket` → `/graphics/labor-of-love/bracket`
 - `drexel-basketball-scorebug` → `/graphics/drexel/basketball-scorebug`
 
-Composite renderer (all instances, z-ordered): `/render/$rundownId`
+Composite renderer (all instances, z-ordered):
+
+- `/render` — follows the active (currently open) rundown; point OBS here once
+- `/render/$rundownId` — fixed rundown id
 
 ## Templates
 

@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useActiveRundownId } from '#/control/client'
 import { RenderRundownView } from './-RenderRundownView'
 
-export const Route = createFileRoute('/render/$rundownId')({
+export const Route = createFileRoute('/render/')({
   ssr: false,
   validateSearch: (search: Record<string, unknown>) => ({
     preview: search.preview === true || search.preview === '1',
@@ -10,11 +11,12 @@ export const Route = createFileRoute('/render/$rundownId')({
         ? Number(search.scale)
         : undefined,
   }),
-  component: RenderRundown,
+  component: RenderDefault,
 })
 
-function RenderRundown() {
-  const { rundownId } = Route.useParams()
+/** OBS-friendly composite that always follows the active (open) rundown. */
+function RenderDefault() {
+  const rundownId = useActiveRundownId()
   const { preview, scale } = Route.useSearch()
   return <RenderRundownView rundownId={rundownId} preview={preview} scale={scale} />
 }

@@ -1,6 +1,7 @@
+import { useEffect } from 'react'
 import { Link, Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
 import { Badge, Breadcrumb } from '@gurleen-ui/core'
-import { useRundownController } from '#/control/client'
+import { setActiveRundown, useRundownController } from '#/control/client'
 
 export const Route = createFileRoute('/control/$rundownId')({
   ssr: false,
@@ -31,6 +32,11 @@ function RundownLayout() {
   const { rundownId } = Route.useParams()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const { status, rundown, error, instances } = useRundownController(rundownId)
+
+  // Opening a rundown marks it as the default `/render` target.
+  useEffect(() => {
+    if (rundownId) setActiveRundown(rundownId)
+  }, [rundownId])
 
   const activeTab = (() => {
     if (pathname.endsWith('/templates')) return 1

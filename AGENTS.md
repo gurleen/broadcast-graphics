@@ -8,7 +8,7 @@ Orientation for coding agents working in this repo. Read this before editing. Fo
 
 - Bun + Hono REST/WS at `/api/control`, SQLite-backed rundowns/instances
 - Operator UI at `/control` (and home launcher at `/`)
-- Per-template routes under `/graphics/*` and composite `/render/$rundownId`
+- Per-template routes under `/graphics/*` and composite `/render` (active rundown) / `/render/$rundownId`
 - Optional Tauri 2 desktop shell (sidecar on `127.0.0.1:4737`)
 
 Product brand string: `HYDRA // GFX` (document title, NavBar brand, Tauri `productName` / window title / loading splash).
@@ -55,6 +55,7 @@ Import alias: `#/*` → `src/*` (also configured in `tsconfig`). Prefer `#/contr
 /control/$rundownId/templates
 /control/$rundownId/renderers
 /graphics/<show>/<name>        Template renderer (+ GraphicStage)
+/render                        Default composite (follows active/open rundown)
 /render/$rundownId             Composite of on-air instances
 /api/control/*                 REST + WS (not a TanStack route — Hono)
 ```
@@ -72,7 +73,7 @@ Route files prefixed with `-` (e.g. `-Graphic.tsx`, `-schema.ts`) are **not** ro
 2. Register schema in **`src/templates/schemas.ts`** (server / REST catalog).
 3. Register definition in **`src/templates/registry.tsx`** (`Render` + optional `Controls`).
 4. Drive from control: create rundown → add instance with that `templateId` → open  
-   `/graphics/...?rundown=&instance=` or `/render/$rundownId`.  
+   `/graphics/...?rundown=&instance=`, `/render` (active rundown), or `/render/$rundownId`.  
    Preview locally: `?preview=1` (checkerboard + toolbar).
 
 Copy an existing folder (`labor-of-love/lower-third` or `drexel/basketball-scorebug`) rather than inventing a new layout from scratch.

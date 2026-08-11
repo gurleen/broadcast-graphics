@@ -205,6 +205,58 @@ describe('commands + store', () => {
     expect(snapshot!.instances).toHaveLength(1)
     expect(snapshot!.rundown.name).toBe('Show E')
   })
+
+  test('setActive rundown pointer get/set and idempotent', () => {
+    expect(store.getActiveRundownId()).toBeNull()
+
+    const created = applyCommand({ type: 'rundown.create', name: 'Show Active' })
+    expect(created.ok).toBe(true)
+    if (!created.ok) return
+    const rundownId = created.rundownId!
+
+    const set = applyCommand({ type: 'rundown.setActive', rundownId })
+    expect(set.ok).toBe(true)
+    if (!set.ok) return
+    expect(store.getActiveRundownId()).toBe(rundownId)
+    const changed = set.events.find((e) => e.type === 'activeRundown.changed')
+    expect(changed?.type).toBe('activeRundown.changed')
+    if (changed?.type === 'activeRundown.changed') {
+      expect(changed.rundownId).toBe(rundownId)
+    }
+
+    const again = applyCommand({ type: 'rundown.setActive', rundownId })
+    expect(again.ok).toBe(true)
+    if (!again.ok) return
+    expect(again.events).toHaveLength(0)
+
+    const missing = applyCommand({ type: 'rundown.setActive', rundownId: 'nope' })
+    expect(missing.ok).toBe(false)
+  })
+
+  test('deleting active rundown clears the pointer', () => {
+    const a = applyCommand({ type: 'rundown.create', name: 'A' })
+    const b = applyCommand({ type: 'rundown.create', name: 'B' })
+    expect(a.ok && b.ok).toBe(true)
+    if (!a.ok || !b.ok) return
+
+    applyCommand({ type: 'rundown.setActive', rundownId: a.rundownId! })
+    expect(store.getActiveRundownId()).toBe(a.rundownId)
+
+    const deleted = applyCommand({ type: 'rundown.delete', rundownId: a.rundownId! })
+    expect(deleted.ok).toBe(true)
+    if (!deleted.ok) return
+    expect(store.getActiveRundownId()).toBeNull()
+    expect(deleted.events.some((e) => e.type === 'activeRundown.changed')).toBe(true)
+
+    applyCommand({ type: 'rundown.setActive', rundownId: b.rundownId! })
+    applyCommand({ type: 'rundown.delete', rundownId: a.rundownId! }) // already gone
+    // deleting a non-active (already gone) shouldn't matter; B still active
+    expect(store.getActiveRundownId()).toBe(b.rundownId)
+
+    const delB = applyCommand({ type: 'rundown.delete', rundownId: b.rundownId! })
+    expect(delB.ok).toBe(true)
+    expect(store.getActiveRundownId()).toBeNull()
+  })
 })
 
 describe('aggregatePhase', () => {

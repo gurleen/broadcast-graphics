@@ -149,6 +149,15 @@ function applyEvent(state: RundownStoreState, seq: number, event: ControlEvent):
         )
       }
       break
+    case 'activeRundown.changed':
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('hydra:active-rundown-changed', {
+            detail: { rundownId: event.rundownId },
+          }),
+        )
+      }
+      break
   }
 
   if (next.rundown) {

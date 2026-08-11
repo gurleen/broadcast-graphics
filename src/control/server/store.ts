@@ -89,6 +89,25 @@ export function deleteRundown(id: string, db: Database = getDb()): boolean {
   return result.changes > 0
 }
 
+const ACTIVE_RUNDOWN_KEY = 'active_rundown_id'
+
+/** Global PGM pointer for `/render` (default composite). */
+export function getActiveRundownId(db: Database = getDb()): string | null {
+  const row = db
+    .query<{ value: string }, [string]>('select value from meta where key = ?')
+    .get(ACTIVE_RUNDOWN_KEY)
+  return row?.value ?? null
+}
+
+/** Persist active rundown id, or clear when `null`. Caller must validate existence. */
+export function setActiveRundownId(id: string | null, db: Database = getDb()): void {
+  if (id === null) {
+    db.query('delete from meta where key = ?').run(ACTIVE_RUNDOWN_KEY)
+    return
+  }
+  db.query('insert or replace into meta (key, value) values (?, ?)').run(ACTIVE_RUNDOWN_KEY, id)
+}
+
 export function setCuedInstance(
   rundownId: string,
   instanceId: string | null,

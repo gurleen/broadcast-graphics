@@ -22,6 +22,11 @@ export const ControlCommand = z.discriminatedUnion('type', [
   }),
   z.object({ type: z.literal('rundown.delete'), rundownId: z.string() }),
   z.object({
+    type: z.literal('rundown.setActive'),
+    /** `null` clears the default `/render` pointer. */
+    rundownId: z.string().nullable(),
+  }),
+  z.object({
     type: z.literal('instance.add'),
     rundownId: z.string(),
     templateId: z.string(),
@@ -114,6 +119,10 @@ export const ControlEvent = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('packages.changed'),
     at: z.number(),
+  }),
+  z.object({
+    type: z.literal('activeRundown.changed'),
+    rundownId: z.string().nullable(),
   }),
   z.object({ type: z.literal('error'), error: ProtocolError }),
 ])

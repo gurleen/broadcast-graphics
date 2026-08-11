@@ -45,7 +45,9 @@ function ensureHubWired() {
   g.__controllerHubUnsub = hubSubscribe((seq, event, rundownId) => {
     const payload = jsonMessage({ type: 'event', seq, event })
     const sessions =
-      rundownId === '*' || event.type === 'packages.changed'
+      rundownId === '*' ||
+      event.type === 'packages.changed' ||
+      event.type === 'activeRundown.changed'
         ? listAllSessions()
         : listSessionsForRundown(rundownId)
     for (const session of sessions) {
@@ -187,6 +189,38 @@ app.get('/api/control/packages/:id/bundle.js', async (c) => {
       'access-control-allow-origin': '*',
     },
   })
+})
+
+app.get('/api/control/active-rundown', (c) =>
+  c.json({ rundownId: store.getActiveRundownId() }),
+)
+
+app.put('/api/control/active-rundown', async (c) => {
+  const body = (await c.req.json().catch(() => null)) as { rundownId?: unknown } | null
+  if (!body || !('rundownId' in body)) {
+    return c.json(
+      { ok: false, error: { code: 'invalid_body', message: 'Expected { rundownId }' } },
+      400,
+    )
+  }
+  if (body.rundownId !== null && typeof body.rundownId !== 'string') {
+    return c.json(
+      {
+        ok: false,
+        error: { code: 'invalid_body', message: 'rundownId must be string or null' },
+      },
+      400,
+    )
+  }
+  const result = applyCommand({
+    type: 'rundown.setActive',
+    rundownId: body.rundownId,
+  })
+  if (!result.ok) {
+    const status = result.error.code === 'not_found' ? 404 : 400
+    return c.json({ ok: false, error: result.error }, status)
+  }
+  return c.json({ ok: true, rundownId: store.getActiveRundownId(), events: result.events })
 })
 
 app.get('/api/control/rundowns', (c) => c.json({ rundowns: store.listRundowns() }))
