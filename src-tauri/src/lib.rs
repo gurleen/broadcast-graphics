@@ -46,20 +46,20 @@ fn parse_ready_url(line: &str) -> Option<String> {
 }
 
 fn navigate_main(app: &tauri::AppHandle, origin: &str) {
-  let control_url = format!("{origin}/control");
-  match Url::parse(&control_url) {
+  let home_url = format!("{origin}/");
+  match Url::parse(&home_url) {
     Ok(url) => {
       if let Some(window) = app.get_webview_window("main") {
         if let Err(err) = window.navigate(url) {
           log::error!("navigate failed: {err}");
         } else {
-          log::info!("navigated to {control_url}");
+          log::info!("navigated to {home_url}");
         }
       } else {
-        log::error!("main window missing; cannot navigate to {control_url}");
+        log::error!("main window missing; cannot navigate to {home_url}");
       }
     }
-    Err(err) => log::error!("invalid control url {control_url}: {err}"),
+    Err(err) => log::error!("invalid home url {home_url}: {err}"),
   }
 }
 
@@ -209,7 +209,7 @@ pub fn run() {
       }
 
       let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
-        .title("Broadcast Graphics")
+        .title("HYDRA // GFX")
         .inner_size(1440.0, 900.0)
         .resizable(true);
 

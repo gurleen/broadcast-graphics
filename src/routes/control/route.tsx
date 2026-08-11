@@ -1,9 +1,7 @@
-import { useState } from 'react'
 import { Link, Outlet, createFileRoute } from '@tanstack/react-router'
-import { Badge, Button, NavBar, ToastProvider } from '@gurleen-ui/core'
+import { NavBar, ToastProvider } from '@gurleen-ui/core'
 import { StatusBar } from '@gurleen-ui/broadcast'
 import { useRundownList } from '#/control/client'
-import { CreateRundownDialog } from './-CreateRundownDialog'
 
 export const Route = createFileRoute('/control')({
   ssr: false,
@@ -11,8 +9,7 @@ export const Route = createFileRoute('/control')({
 })
 
 function ControlLayout() {
-  const { rundowns, loading, error, refresh, createRundown } = useRundownList()
-  const [createOpen, setCreateOpen] = useState(false)
+  const { rundowns, loading, error } = useRundownList()
 
   return (
     <ToastProvider>
@@ -29,16 +26,9 @@ function ControlLayout() {
       >
         <NavBar
           brand={
-            <Link to="/control" style={{ textDecoration: 'none', color: 'inherit' }}>
-              <span style={{ fontWeight: 700, letterSpacing: '0.1em', fontSize: 13 }}>CONTROL</span>
+            <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <span style={{ fontWeight: 700, letterSpacing: '0.1em', fontSize: 13 }}>HYDRA // GFX</span>
             </Link>
-          }
-          actions={
-            <>
-              <Badge kind="info" label="GFX CONTROL PLANE" />
-              <Button label="+ NEW" size="sm" variant="accent" onClick={() => setCreateOpen(true)} />
-              <Button label="REFRESH" size="sm" onClick={() => void refresh()} />
-            </>
           }
         >
           <Link
@@ -69,13 +59,6 @@ function ControlLayout() {
             },
             { label: 'RUNDOWNS', value: String(rundowns.length), kind: 'info' },
           ]}
-          right={<Badge kind="neutral" label="OPERATOR" style={{ margin: 'auto 8px' }} />}
-        />
-
-        <CreateRundownDialog
-          open={createOpen}
-          onClose={() => setCreateOpen(false)}
-          onCreate={createRundown}
         />
       </div>
     </ToastProvider>

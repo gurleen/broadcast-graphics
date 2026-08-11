@@ -1,5 +1,5 @@
 /**
- * Write dist/client/index.html from the Start document shell for /control.
+ * Write dist/client/index.html from the Start document shell for /.
  * Desktop sidecar serves this for all client routes (SPA fallback).
  */
 import path from 'node:path'
@@ -14,7 +14,7 @@ const mod = (await import(serverEntry)) as {
   default: { fetch: (request: Request) => Response | Promise<Response> }
 }
 
-const response = await mod.default.fetch(new Request('http://127.0.0.1/control'))
+const response = await mod.default.fetch(new Request('http://127.0.0.1/'))
 if (!response.ok) {
   console.error(`[write-desktop-index] unexpected status ${response.status}`)
   process.exit(1)

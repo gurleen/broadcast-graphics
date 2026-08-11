@@ -28,7 +28,7 @@ bun --bun run build
 
 ## Desktop (Tauri)
 
-The desktop app is a Tauri 2 shell around a compiled Bun sidecar (`serve-desktop.ts`). The sidecar binds **loopback only** on port **4737** and serves the UI + `/api/control`. The Tauri window opens `/control`; same-machine OBS can use browser sources against the same server.
+The desktop app is a Tauri 2 shell around a compiled Bun sidecar (`serve-desktop.ts`). The sidecar binds **loopback only** on port **4737** and serves the UI + `/api/control`. The Tauri window opens `/`; same-machine OBS can use browser sources against the same server.
 
 **Prerequisites:** Rust (`rustc`/`cargo`), Xcode Command Line Tools (macOS), Bun.
 
@@ -45,7 +45,7 @@ SKIP_UI_BUILD=1 bun run prepare:desktop
 bun run tauri:dev
 ```
 
-`prepare:desktop` runs a Vite production build, writes a desktop `dist/client/index.html` shell (so the sidecar can SPA-serve `/control`, `/render/*`, and `/graphics/*` without the SSR runtime), then compiles the Bun sidecar.
+`prepare:desktop` runs a Vite production build, writes a desktop `dist/client/index.html` shell (so the sidecar can SPA-serve `/`, `/control`, `/render/*`, and `/graphics/*` without the SSR runtime), then compiles the Bun sidecar.
 
 **OBS / external renderers (same Mac):**
 

@@ -97,7 +97,7 @@ async function main() {
       const staticHandler = staticRoutes[url.pathname]
       if (staticHandler) return staticHandler()
 
-      // Client routes: /control, /render/*, /graphics/*
+      // Client routes: /, /control, /render/*, /graphics/*
       if (!path.extname(url.pathname)) {
         return spaFallback()
       }
