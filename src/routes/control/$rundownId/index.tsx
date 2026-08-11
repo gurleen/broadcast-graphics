@@ -407,7 +407,7 @@ function PlayoutPage() {
               size="lg"
               variant="armed"
               active={onAir.length > 0}
-              disabled={status !== 'open' || onAir.length === 0}
+              disabled={status !== 'open'}
               title="Clear all graphics from program"
               onClick={() => void run('Blank', () => clearAll())}
             />
@@ -415,7 +415,7 @@ function PlayoutPage() {
               label="PANIC"
               size="lg"
               variant="take"
-              disabled={status !== 'open' || onAir.length === 0}
+              disabled={status !== 'open'}
               title="Clear program immediately (skip animations)"
               onClick={() => void run('Panic', () => panic())}
             />
