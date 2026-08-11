@@ -1,10 +1,10 @@
-Welcome to your new TanStack Start app!
+# HYDRA // GFX
 
-# Getting Started
+Broadcast graphics control plane and operator UI for DragonsTV. Transparent 1920×1080 graphics for OBS browser sources, driven by a Bun + SQLite control server and a Tauri desktop shell.
 
-This repo vendors the [@gurleen-ui](https://github.com/gurleen/ui) component libraries as a git submodule at `ui/`.
+For agent-oriented orientation (how to add graphics, control pages, UI components), see **[AGENTS.md](./AGENTS.md)**.
 
-To run this application:
+## Quick start
 
 ```bash
 git submodule update --init --recursive   # if you cloned without --recurse-submodules
@@ -12,280 +12,115 @@ bun install
 bun run dev
 ```
 
-`predev` and `prebuild` run `build:ui`, which installs and builds the submodule (`npm ci` + `npm run build` inside `ui/`). You can run that step alone with `bun run build:ui` after updating the submodule.
+Open **http://localhost:3000**. Dev runs [`dev-server.ts`](./dev-server.ts): Bun on port **3000**, Vite HMR on 5173 (proxied). The control API is at `/api/control`.
 
-Design tokens from `@gurleen-ui/tokens` are loaded once in [`src/routes/__root.tsx`](src/routes/__root.tsx). Use components via `@gurleen-ui/core` and `@gurleen-ui/broadcast`.
+`predev` / `prebuild` run `build:ui` (`npm ci` + `npm run build` inside the `ui/` submodule). After updating the submodule: `bun run build:ui`.
 
-Dev runs `dev-server.ts`: Bun serves on port **3000** (open this URL) and proxies to Vite on 5173. The graphics control plane (REST + WebSocket) is mounted at `/api/control`.
+**Requires Bun** for anything that touches the control plane (`bun:sqlite`). Do not run production under Node.
 
-# Building For Production
+## Surfaces
 
-To build this application for production:
+| Path | Purpose |
+|------|---------|
+| `/` | Home launcher (`HYDRA // GFX`) |
+| `/control` | Operator UI — rundowns, playout, templates, renderers |
+| `/graphics/...` | Per-template graphic (OBS browser source) |
+| `/render/<rundownId>` | Composite renderer for a whole rundown |
+| `/api/control` | REST + WebSocket control plane |
 
-```bash
-bun --bun run build
-```
+Brand chrome uses `@gurleen-ui` tokens. Graphics routes stay transparent for OBS (no opaque page background).
 
-## Desktop (Tauri)
+## UI libraries
 
-The desktop app is a Tauri 2 shell around a compiled Bun sidecar (`serve-desktop.ts`). The sidecar binds **loopback only** on port **4737** and serves the UI + `/api/control`. The Tauri window opens `/`; same-machine OBS can use browser sources against the same server.
+The [`ui/`](./ui/) git submodule is [@gurleen-ui](https://github.com/gurleen/ui):
 
-**Prerequisites:** Rust (`rustc`/`cargo`), Xcode Command Line Tools (macOS), Bun.
+- `@gurleen-ui/tokens` — CSS variables (loaded once in [`src/routes/__root.tsx`](./src/routes/__root.tsx))
+- `@gurleen-ui/core` — generic controls (`Button`, `Panel`, `DataGrid`, `LauncherTile`, …)
+- `@gurleen-ui/broadcast` — broadcast-domain (`Tally`, `StatusBar`, `TransportControls`, …)
 
-```bash
-bun install
-bun run tauri:dev      # builds UI + sidecar, then opens the desktop app
-bun run tauri:build    # produces a packaged .app / installer
-```
+Agent rules for that submodule: [`ui/AGENTS.md`](./ui/AGENTS.md).
 
-Faster iteration when `ui/` packages are already built:
-
-```bash
-SKIP_UI_BUILD=1 bun run prepare:desktop
-bun run tauri:dev
-```
-
-`prepare:desktop` runs a Vite production build, writes a desktop `dist/client/index.html` shell (so the sidecar can SPA-serve `/`, `/control`, `/render/*`, and `/graphics/*` without the SSR runtime), then compiles the Bun sidecar.
-
-**OBS / external renderers (same Mac):**
-
-| Surface | URL |
-|---------|-----|
-| Control UI | `http://127.0.0.1:4737/control` |
-| Composite renderer | `http://127.0.0.1:4737/render/<rundownId>` |
-| Graphic template | `http://127.0.0.1:4737/graphics/...` |
-
-Override the port with `PORT` if needed (pass through when launching the app). SQLite lives in the OS app-data directory (`CONTROLLER_DB`), not inside the read-only bundle.
-
-Browser workflows (`bun run dev` / `bun run start`) are unchanged for remote OBS or non-desktop use.
+App imports use the `#/*` alias → `src/*` (e.g. `#/control/client`).
 
 ## Graphics control plane
 
-The control server owns rundowns and graphic instances (props + playout intent) in SQLite (`data/controller.db`, overridable via `CONTROLLER_DB`). Renderers and a future control UI sync over WebSocket.
+Rundowns and graphic instances (props + playout intent) live in SQLite (`data/controller.db`, overridable via `CONTROLLER_DB`). Renderers and the control UI sync over WebSocket.
 
-**Full reference:** [docs/control-plane.md](docs/control-plane.md) (architecture, protocol, commands, hooks, templates).
+**Full reference:** [docs/control-plane.md](./docs/control-plane.md).
 
 ### REST (summary)
 
 | Method | Path | Purpose |
 |--------|------|---------|
 | `GET` | `/api/control/health` | Liveness + protocol version |
-| `GET` | `/api/control/templates` | Registered templates (defaults, fields, JSON Schema) |
+| `GET` | `/api/control/templates` | Registered templates |
 | `GET` | `/api/control/rundowns` | List rundowns |
 | `POST` | `/api/control/rundowns` | Create rundown `{ name }` |
-| `GET` | `/api/control/rundowns/:id` | Full snapshot (rundown, instances, renderers) |
-| `POST` | `/api/control/rundowns/:id/commands` | Apply one command or `{ commands: [...] }` |
-
-Example:
+| `GET` | `/api/control/rundowns/:id` | Full snapshot |
+| `POST` | `/api/control/rundowns/:id/commands` | Apply command(s) |
 
 ```bash
-# Create a rundown and add a lower third
-curl -s -X POST localhost:3000/api/control/rundowns -H 'content-type: application/json' -d '{"name":"Show"}'
-curl -s -X POST localhost:3000/api/control/rundowns/$ID/commands -H 'content-type: application/json' \
-  -d '{"type":"instance.add","templateId":"labor-of-love-lower-third","label":"L3_001"}'
-curl -s -X POST localhost:3000/api/control/rundowns/$ID/commands -H 'content-type: application/json' \
-  -d '{"type":"playout.in","instanceId":"$INSTANCE_ID"}'
+curl -s -X POST localhost:3000/api/control/rundowns \
+  -H 'content-type: application/json' -d '{"name":"Show"}'
+# then instance.add / playout.in via /commands — see docs/control-plane.md
 ```
 
-Open the graphic as a browser source with control params:
+Browser sources:
 
-`/graphics/labor-of-love/lower-third?rundown=$ID&instance=$INSTANCE_ID`
+- Single graphic: `/graphics/labor-of-love/lower-third?rundown=$ID&instance=$INSTANCE_ID`
+- Whole rundown: `/render/$ID`
 
-Or the composite renderer for a whole rundown:
+Client hooks: `#/control/client` (`useRundownController`, `useControlledGraphic`, …).
 
-`/render/$ID`
+## Desktop (Tauri)
 
-### WebSocket / hooks (summary)
+Tauri 2 shell around a Bun sidecar ([`serve-desktop.ts`](./serve-desktop.ts)). Sidecar binds **loopback only** on port **4737**. The window opens `/`.
 
-Connect to `ws(s)://{host}/api/control/ws`, then send:
+**Prerequisites:** Rust, Xcode CLT (macOS), Bun.
 
-```json
-{ "type": "hello", "role": "control", "rundownId": "...", "protocolVersion": 1 }
+```bash
+bun install
+bun run tauri:dev      # prepare:desktop then open the app
+bun run tauri:build
 ```
 
-Client hooks live in `#/control/client`:
+Skip rebuilding `ui/` when packages are already built:
 
-- `useRundownController(rundownId)` — API for a future control UI
-- `useControlledGraphic(template)` — drop-in for graphic routes (local preview without search params; server-driven with `?rundown=&instance=`)
+```bash
+SKIP_UI_BUILD=1 bun run prepare:desktop
+bun run tauri:dev
+```
 
-### Follow-ups
+`prepare:desktop` builds the Vite client, writes an SPA `dist/client/index.html` shell for `/`, `/control`, `/render/*`, `/graphics/*`, then compiles the sidecar.
 
-- Control UI (not in this pass)
-- Server-authoritative game clocks so multiple browser sources do not drift (scorebug clock is still local `setInterval` today)
+| Surface | URL (same Mac / OBS) |
+|---------|----------------------|
+| Home | `http://127.0.0.1:4737/` |
+| Control UI | `http://127.0.0.1:4737/control` |
+| Composite | `http://127.0.0.1:4737/render/<rundownId>` |
+| Graphic | `http://127.0.0.1:4737/graphics/...` |
 
-Production must be started with Bun (`bun run start`), not Node, because the control plane uses `bun:sqlite`.
+Override port with `PORT`. Desktop SQLite uses the OS app-data directory (`CONTROLLER_DB`), not the read-only bundle.
 
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-### Removing Tailwind CSS
-
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
-
-
-## Deploy with Bun
-
-This app uses [TanStack Start](https://tanstack.com/start) with Vite (no Nitro). The SSR entry is `src/server.ts`.
+## Production (browser / remote OBS)
 
 ```bash
 bun run build
-bun run start
+bun run start          # serve.ts — Bun.serve + control plane
 ```
 
-Production uses `serve.ts` (`Bun.serve`).
+## Scripts
 
-## Routing
+| Script | What it does |
+|--------|----------------|
+| `bun run dev` | Hot Bun + Vite proxy on :3000 |
+| `bun run build` | Production Vite build (+ `build:ui`) |
+| `bun run start` | Serve built app + control API |
+| `bun test` | Control-plane tests (`CONTROLLER_DB=:memory:`) |
+| `bun run build:ui` | Install/build `@gurleen-ui` submodule |
+| `bun run prepare:desktop` | Client shell + sidecar binary |
+| `bun run tauri:dev` / `tauri:build` | Desktop app |
 
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
+## Known follow-ups
 
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+- Server-authoritative game clocks (scorebug still uses local `setInterval`; multi-source clocks can drift)

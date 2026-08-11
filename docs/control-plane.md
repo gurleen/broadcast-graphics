@@ -1,12 +1,12 @@
 # Graphics control plane
 
-Real-time control of broadcast graphics over REST and WebSockets. No control UI yet — this document covers the APIs and client hooks a UI (or automation) will use.
+Real-time control of broadcast graphics over REST and WebSockets. The operator UI lives at `/control` (and the home launcher at `/`); this document covers the APIs and client hooks that UI and automation use.
 
 ## Architecture
 
 ```
 Browser graphic  ──WS──┐
-Control UI (future) ───┼── Bun (dev-server.ts / serve.ts)
+Control UI (/control) ─┼── Bun (dev-server.ts / serve.ts / serve-desktop.ts)
 Automation / curl ─REST┘         │
                                  ▼
                           Hono /api/control
@@ -153,7 +153,7 @@ Import from `#/control/client`.
 
 ### `useRundownController(rundownId)`
 
-For a future control UI / operator surface:
+Operator / control UI API:
 
 - State: `snapshot`, `instances`, `renderers`, `status`, `log`
 - Senders: `cue`, `take`, `in`, `out`, `toggle`, `clearAll`, `panic`, `patchProps`, `replaceProps`, `addInstance`, `removeInstance`, `reorder`, …
@@ -210,5 +210,4 @@ Coverage in [`src/control/control.test.ts`](../src/control/control.test.ts): pro
 
 ## Follow-ups
 
-- Control UI (operator rundown / playout / properties)
 - Server-authoritative game clocks (scorebug `setInterval` is still local so multi-source clocks can drift)
