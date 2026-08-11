@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Dialog, Input, Select } from '@gurleen-ui/core'
+import { Dialog, Input, Select } from '@hydra-tv/ui'
 import type { TemplatePublicMeta } from '#/templates/schemas'
 
 type AddInstanceDialogProps = {

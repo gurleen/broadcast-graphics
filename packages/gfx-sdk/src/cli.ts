@@ -47,8 +47,8 @@ async function loadContract(): Promise<Record<string, string>> {
     '@hydra-tv/hydra-gfx-runtime': '0.1.0',
     'motion/react': '0.1.0',
     zod: '0.1.0',
-    '@gurleen-ui/core': '0.1.0',
-    '@gurleen-ui/broadcast': '0.1.0',
+    '@hydra-tv/ui': '0.1.0',
+    '@hydra-tv/broadcast': '0.1.0',
   }
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, type CSSProperties } from 'react'
-import { Button, FieldRow, Input, Select } from '@gurleen-ui/core'
+import { Button, FieldRow, Input, Select } from '@hydra-tv/ui'
 import type { TemplateControlsProps } from '#/templates/types'
 import {
   numericClockValue,

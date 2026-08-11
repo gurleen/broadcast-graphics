@@ -1,4 +1,4 @@
-import { FieldRow, Input } from '@gurleen-ui/core'
+import { FieldRow, Input } from '@hydra-tv/ui'
 import type { TemplateControlsProps } from '@hydra-tv/hydra-gfx-runtime/types'
 import type { ExampleLowerThirdProps } from './schema'
 

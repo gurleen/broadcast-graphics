@@ -8,8 +8,8 @@
     "watch": "bun ../../packages/gfx-sdk/src/cli.ts build --watch --out ../../data/packages"
   },
   "dependencies": {
-    "@gurleen-ui/core": "file:../../ui/packages/core",
-    "@gurleen-ui/tokens": "file:../../ui/packages/tokens",
+    "@hydra-tv/tokens": "0.1.0",
+    "@hydra-tv/ui": "0.1.0",
     "@hydra-tv/hydra-gfx-runtime": "file:../../packages/gfx-runtime",
     "@hydra-tv/hydra-gfx-sdk": "file:../../packages/gfx-sdk",
     "gsap": "^3.13.0",
@@ -20,8 +20,5 @@
   "devDependencies": {
     "@types/react": "^19.2.0",
     "typescript": "^6.0.2"
-  },
-  "overrides": {
-    "@gurleen-ui/tokens": "file:../../ui/packages/tokens"
   }
 }

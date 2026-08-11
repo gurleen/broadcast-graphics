@@ -10,12 +10,9 @@
   },
   "scripts": {
     "dev": "bun --hot run dev-server.ts",
-    "predev": "bun run build:ui",
     "generate-routes": "tsr generate",
     "test": "bun test",
     "build": "vite build",
-    "prebuild": "bun run build:ui",
-    "build:ui": "npm --prefix ui ci && npm --prefix ui run build",
     "build:packages": "bun run --cwd packages/gfx-runtime build && bun run --cwd packages/gfx-sdk build",
     "publish:packages": "bun run build:packages && npm publish --workspace @hydra-tv/hydra-gfx-runtime && npm publish --workspace @hydra-tv/hydra-gfx-sdk",
     "start": "bun run serve.ts",
@@ -28,9 +25,9 @@
     "tauri:build": "tauri build"
   },
   "dependencies": {
-    "@gurleen-ui/broadcast": "file:ui/packages/broadcast",
-    "@gurleen-ui/core": "file:ui/packages/core",
-    "@gurleen-ui/tokens": "file:ui/packages/tokens",
+    "@hydra-tv/broadcast": "0.1.0",
+    "@hydra-tv/tokens": "0.1.0",
+    "@hydra-tv/ui": "0.1.0",
     "@hydra-tv/hydra-gfx-runtime": "workspace:*",
     "@hydra-tv/hydra-gfx-sdk": "workspace:*",
     "@react-three/drei": "^10.7.7",
@@ -62,10 +59,6 @@
     "@vitejs/plugin-react": "^6.0.1",
     "typescript": "^6.0.2",
     "vite": "^8.0.0"
-  },
-  "overrides": {
-    "@gurleen-ui/core": "file:ui/packages/core",
-    "@gurleen-ui/tokens": "file:ui/packages/tokens"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

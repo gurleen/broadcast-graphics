@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { Badge, Button, DataGrid, Panel, PropertyEditor, Spinner, useToast } from '@gurleen-ui/core'
-import type { DataGridRow, PropertyField } from '@gurleen-ui/core'
+import { Badge, Button, DataGrid, Panel, PropertyEditor, Spinner, useToast } from '@hydra-tv/ui'
+import type { DataGridRow, PropertyField } from '@hydra-tv/ui'
 import { useRundownController, useTemplateCatalog } from '#/control/client'
 import { AddInstanceDialog } from './-AddInstanceDialog'
 

@@ -6,8 +6,8 @@ import * as jsxRuntime from 'react/jsx-runtime'
 import * as jsxDevRuntime from 'react/jsx-dev-runtime'
 import * as motion from 'motion/react'
 import * as zod from 'zod'
-import * as gurleenCore from '@gurleen-ui/core'
-import * as gurleenBroadcast from '@gurleen-ui/broadcast'
+import * as hydraUi from '@hydra-tv/ui'
+import * as hydraBroadcast from '@hydra-tv/broadcast'
 import * as gfxRuntime from '@hydra-tv/hydra-gfx-runtime'
 import {
   DEFAULT_SHARED,
@@ -32,8 +32,8 @@ export function buildClientSharedModules(): SharedModules {
     'react/jsx-dev-runtime': jsxDevRuntime,
     'motion/react': motion,
     zod,
-    '@gurleen-ui/core': gurleenCore,
-    '@gurleen-ui/broadcast': gurleenBroadcast,
+    '@hydra-tv/ui': hydraUi,
+    '@hydra-tv/broadcast': hydraBroadcast,
     '@hydra-tv/hydra-gfx-runtime': gfxRuntime,
   }
 }

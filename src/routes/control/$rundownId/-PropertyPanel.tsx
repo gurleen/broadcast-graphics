@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Checkbox, FieldRow, Input, Select, Slider, Switch } from '@gurleen-ui/core'
+import { Checkbox, FieldRow, Input, Select, Slider, Switch } from '@hydra-tv/ui'
 import type { GraphicInstance } from '#/control/model'
 import type { TemplatePublicMeta } from '#/templates/schemas'
 import { resolveTemplateDefinition } from '#/templates/registry'

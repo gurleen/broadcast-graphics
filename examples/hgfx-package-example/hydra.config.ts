@@ -10,7 +10,7 @@ const config = {
     '@hydra-tv/hydra-gfx-runtime',
     'motion/react',
     'zod',
-    '@gurleen-ui/core',
+    '@hydra-tv/ui',
   ],
   runtime: '^0.1.0',
 }

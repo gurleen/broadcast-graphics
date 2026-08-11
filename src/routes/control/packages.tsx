@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Badge, Button, Panel, Spinner } from '@gurleen-ui/core'
+import { Badge, Button, Panel, Spinner } from '@hydra-tv/ui'
 
 export const Route = createFileRoute('/control/packages')({
   ssr: false,

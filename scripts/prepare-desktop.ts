@@ -4,15 +4,6 @@
  */
 import { $ } from 'bun'
 
-const skipUi = process.env.SKIP_UI_BUILD === '1'
-
-if (!skipUi) {
-  console.log('[prepare:desktop] building UI packages…')
-  await $`bun run build:ui`
-} else {
-  console.log('[prepare:desktop] SKIP_UI_BUILD=1 — skipping UI packages')
-}
-
 console.log('[prepare:desktop] vite build…')
 await $`bunx vite build`
 

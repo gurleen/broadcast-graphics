@@ -1,4 +1,4 @@
-import { Button } from '@gurleen-ui/core'
+import { Button } from '@hydra-tv/ui'
 
 export function PreviewTransport({
   onIn,

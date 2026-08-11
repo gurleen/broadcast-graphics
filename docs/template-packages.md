@@ -35,14 +35,14 @@ export default {
     '@hydra-tv/hydra-gfx-runtime',
     'motion/react',   // optional — remove to bundle your own copy
     'zod',
-    '@gurleen-ui/core',
+    '@hydra-tv/ui',
   ],
   runtime: '^0.1.0',
 }
 ```
 
 - **Mandatory shared:** `react`, `react/jsx-runtime`, `react/jsx-dev-runtime`, `@hydra-tv/hydra-gfx-runtime`
-- **Default shared (removable):** `motion/react`, `zod`, `@gurleen-ui/core`, `@gurleen-ui/broadcast`
+- **Default shared (removable):** `motion/react`, `zod`, `@hydra-tv/ui`, `@hydra-tv/broadcast`
 - **Everything else is bundled** (e.g. `gsap`) — see `examples/hgfx-package-example` ticker template
 
 ## Authoring a package
@@ -50,7 +50,7 @@ export default {
 ```bash
 # In your package repo
 bun add @hydra-tv/hydra-gfx-sdk @hydra-tv/hydra-gfx-runtime react zod motion
-# optional: @gurleen-ui/core gsap …
+# optional: @hydra-tv/ui gsap …
 
 # src/index.ts
 import { definePackage, defineTemplate } from '@hydra-tv/hydra-gfx-sdk'
@@ -96,7 +96,7 @@ Composite PGM (`/render/$rundownId`) and the property panel load package bundles
 
 See [`examples/hgfx-package-example`](../examples/hgfx-package-example):
 
-- `example-lower-third` — motion (shared) + custom Controls (`@gurleen-ui/core`)
+- `example-lower-third` — motion (shared) + custom Controls (`@hydra-tv/ui`)
 - `example-gsap-ticker` — gsap **bundled** into the artifact
 
 ```bash

@@ -20,18 +20,6 @@ const config = defineConfig({
         find: '@hydra-tv/hydra-gfx-runtime',
         replacement: path.join(root, 'packages/gfx-runtime/src/index.ts'),
       },
-      {
-        find: '@gurleen-ui/core',
-        replacement: path.join(root, 'ui/packages/core/dist/index.js'),
-      },
-      {
-        find: '@gurleen-ui/broadcast',
-        replacement: path.join(root, 'ui/packages/broadcast/dist/index.js'),
-      },
-      {
-        find: '@gurleen-ui/tokens',
-        replacement: path.join(root, 'ui/packages/tokens/src/index.css'),
-      },
     ],
   },
   server: {

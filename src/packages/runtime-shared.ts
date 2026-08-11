@@ -33,8 +33,8 @@ export const DEFAULT_SHARED = [
   ...MANDATORY_SHARED,
   'motion/react',
   'zod',
-  '@gurleen-ui/core',
-  '@gurleen-ui/broadcast',
+  '@hydra-tv/ui',
+  '@hydra-tv/broadcast',
 ] as const
 
 export function installRuntime(modules: SharedModules, version = RUNTIME_VERSION): HydraGfxRuntime {

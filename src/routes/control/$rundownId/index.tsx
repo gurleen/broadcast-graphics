@@ -9,9 +9,9 @@ import {
   LogConsole,
   Panel,
   useToast,
-} from '@gurleen-ui/core'
-import type { DataGridRow, LogLine as UiLogLine } from '@gurleen-ui/core'
-import { Tally } from '@gurleen-ui/broadcast'
+} from '@hydra-tv/ui'
+import type { DataGridRow, LogLine as UiLogLine } from '@hydra-tv/ui'
+import { Tally } from '@hydra-tv/broadcast'
 import { useRundownController, useTemplateCatalog } from '#/control/client'
 import type { GraphicInstance } from '#/control/model'
 import { AddInstanceDialog } from './-AddInstanceDialog'

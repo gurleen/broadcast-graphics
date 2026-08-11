@@ -49,8 +49,8 @@ export function buildServerSharedModules(): SharedModules {
     '@hydra-tv/hydra-gfx-runtime': gfxRuntime,
     // Browser / UI modules — never evaluated for schema imports when components are lazy.
     'motion/react': lazyStub('motion/react'),
-    '@gurleen-ui/core': lazyStub('@gurleen-ui/core'),
-    '@gurleen-ui/broadcast': lazyStub('@gurleen-ui/broadcast'),
+    '@hydra-tv/ui': lazyStub('@hydra-tv/ui'),
+    '@hydra-tv/broadcast': lazyStub('@hydra-tv/broadcast'),
   }
 }
 

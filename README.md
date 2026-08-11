@@ -7,14 +7,11 @@ For agent-oriented orientation (how to add graphics, control pages, UI component
 ## Quick start
 
 ```bash
-git submodule update --init --recursive   # if you cloned without --recurse-submodules
 bun install
 bun run dev
 ```
 
 Open **http://localhost:3000**. Dev runs [`dev-server.ts`](./dev-server.ts): Bun on port **3000**, Vite HMR on 5173 (proxied). The control API is at `/api/control`.
-
-`predev` / `prebuild` run `build:ui` (`npm ci` + `npm run build` inside the `ui/` submodule). After updating the submodule: `bun run build:ui`.
 
 **Requires Bun** for anything that touches the control plane (`bun:sqlite`). Do not run production under Node.
 
@@ -29,17 +26,15 @@ Open **http://localhost:3000**. Dev runs [`dev-server.ts`](./dev-server.ts): Bun
 | `/render/<rundownId>` | Composite renderer for a specific rundown |
 | `/api/control` | REST + WebSocket control plane |
 
-Brand chrome uses `@gurleen-ui` tokens. Graphics routes stay transparent for OBS (no opaque page background).
+Brand chrome uses `@hydra-tv/tokens`. Graphics routes stay transparent for OBS (no opaque page background).
 
 ## UI libraries
 
-The [`ui/`](./ui/) git submodule is [@gurleen-ui](https://github.com/gurleen/ui):
+Published npm packages from [gurleen/ui](https://github.com/gurleen/ui):
 
-- `@gurleen-ui/tokens` — CSS variables (loaded once in [`src/routes/__root.tsx`](./src/routes/__root.tsx))
-- `@gurleen-ui/core` — generic controls (`Button`, `Panel`, `DataGrid`, `LauncherTile`, …)
-- `@gurleen-ui/broadcast` — broadcast-domain (`Tally`, `StatusBar`, `TransportControls`, …)
-
-Agent rules for that submodule: [`ui/AGENTS.md`](./ui/AGENTS.md).
+- `@hydra-tv/tokens` — CSS variables (loaded once in [`src/routes/__root.tsx`](./src/routes/__root.tsx))
+- `@hydra-tv/ui` — generic controls (`Button`, `Panel`, `DataGrid`, `LauncherTile`, …)
+- `@hydra-tv/broadcast` — broadcast-domain (`Tally`, `StatusBar`, `TransportControls`, …)
 
 App imports use the `#/*` alias → `src/*` (e.g. `#/control/client`).
 
@@ -88,13 +83,6 @@ bun run tauri:dev      # prepare:desktop then open the app
 bun run tauri:build
 ```
 
-Skip rebuilding `ui/` when packages are already built:
-
-```bash
-SKIP_UI_BUILD=1 bun run prepare:desktop
-bun run tauri:dev
-```
-
 `prepare:desktop` builds the Vite client, writes an SPA `dist/client/index.html` shell for `/`, `/control`, `/render/*`, `/graphics/*`, then compiles the sidecar.
 
 | Surface | URL (same Mac / OBS) |
@@ -119,10 +107,9 @@ bun run start          # serve.ts — Bun.serve + control plane
 | Script | What it does |
 |--------|----------------|
 | `bun run dev` | Hot Bun + Vite proxy on :3000 |
-| `bun run build` | Production Vite build (+ `build:ui`) |
+| `bun run build` | Production Vite build |
 | `bun run start` | Serve built app + control API |
 | `bun test` | Control-plane tests (`CONTROLLER_DB=:memory:`) |
-| `bun run build:ui` | Install/build `@gurleen-ui` submodule |
 | `bun run build:packages` | Build `@hydra-tv/hydra-gfx-runtime` + `@hydra-tv/hydra-gfx-sdk` |
 | `bun run publish:packages` | Build then `npm publish` both packages (runtime first) |
 | `bun run prepare:desktop` | Client shell + sidecar binary |

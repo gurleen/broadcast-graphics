@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link, Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
-import { Badge, Breadcrumb } from '@gurleen-ui/core'
+import { Badge, Breadcrumb } from '@hydra-tv/ui'
 import { setActiveRundown, useRundownController } from '#/control/client'
 
 export const Route = createFileRoute('/control/$rundownId')({

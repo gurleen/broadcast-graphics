@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Dialog, Input } from '@gurleen-ui/core'
+import { Dialog, Input } from '@hydra-tv/ui'
 import { useNavigate } from '@tanstack/react-router'
 
 type CreateRundownDialogProps = {

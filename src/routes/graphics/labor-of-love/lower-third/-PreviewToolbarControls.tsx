@@ -1,4 +1,4 @@
-import { FieldRow, Input, Slider } from '@gurleen-ui/core'
+import { FieldRow, Input, Slider } from '@hydra-tv/ui'
 import type { LaborOfLoveLowerThirdProps } from './-types'
 
 export function PreviewToolbarControls({

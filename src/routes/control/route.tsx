@@ -1,6 +1,6 @@
 import { Link, Outlet, createFileRoute } from '@tanstack/react-router'
-import { NavBar, ToastProvider, useToast } from '@gurleen-ui/core'
-import { StatusBar } from '@gurleen-ui/broadcast'
+import { NavBar, ToastProvider, useToast } from '@hydra-tv/ui'
+import { StatusBar } from '@hydra-tv/broadcast'
 import { useRundownList } from '#/control/client'
 
 export const Route = createFileRoute('/control')({

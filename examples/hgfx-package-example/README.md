@@ -6,7 +6,7 @@ Demonstrates compiling an independent template package into a single `.hgfx.js` 
 
 | id | Notes |
 |----|-------|
-| `example-lower-third` | Uses shared `motion/react` + custom `@gurleen-ui/core` Controls |
+| `example-lower-third` | Uses shared `motion/react` + custom `@hydra-tv/ui` Controls |
 | `example-gsap-ticker` | Bundles **gsap** (not shared) — bring-your-own animation library |
 
 ## Build

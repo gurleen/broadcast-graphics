@@ -1,5 +1,5 @@
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
-import { LauncherTile } from '@gurleen-ui/core'
+import { LauncherTile } from '@hydra-tv/ui'
 
 export const Route = createFileRoute('/')({ component: Home })
 

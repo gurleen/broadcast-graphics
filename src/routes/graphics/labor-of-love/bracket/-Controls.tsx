@@ -1,5 +1,5 @@
 import { useMemo, type CSSProperties } from 'react'
-import { Button, FieldRow, Input, Panel } from '@gurleen-ui/core'
+import { Button, FieldRow, Input, Panel } from '@hydra-tv/ui'
 import type { TemplateControlsProps } from '#/templates/types'
 import {
   resolveBracket,

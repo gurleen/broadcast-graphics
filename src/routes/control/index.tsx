@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Badge, Button, DataGrid, Panel, Spinner } from '@gurleen-ui/core'
-import type { DataGridRow } from '@gurleen-ui/core'
+import { Badge, Button, DataGrid, Panel, Spinner } from '@hydra-tv/ui'
+import type { DataGridRow } from '@hydra-tv/ui'
 import { useRundownList } from '#/control/client'
 import { useState } from 'react'
 import { CreateRundownDialog } from './-CreateRundownDialog'
