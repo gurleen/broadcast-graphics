@@ -17,6 +17,11 @@ const config = defineConfig({
       '@gurleen-ui/tokens': path.join(root, 'ui/packages/tokens/src/index.css'),
     },
   },
+  server: {
+    watch: {
+      ignored: ['**/src-tauri/**'],
+    },
+  },
   plugins: [devtools(), tanstackStart(), viteReact(), tailwindcss()],
 })
 

@@ -16,7 +16,7 @@ bun run dev
 
 Design tokens from `@gurleen-ui/tokens` are loaded once in [`src/routes/__root.tsx`](src/routes/__root.tsx). Use components via `@gurleen-ui/core` and `@gurleen-ui/broadcast`.
 
-Dev runs `dev-server.ts`: Bun serves on port 3000 and proxies to Vite on 5173. The graphics control plane (REST + WebSocket) is mounted at `/api/control`.
+Dev runs `dev-server.ts`: Bun serves on port **3000** (open this URL) and proxies to Vite on 5173. The graphics control plane (REST + WebSocket) is mounted at `/api/control`.
 
 # Building For Production
 
@@ -25,6 +25,39 @@ To build this application for production:
 ```bash
 bun --bun run build
 ```
+
+## Desktop (Tauri)
+
+The desktop app is a Tauri 2 shell around a compiled Bun sidecar (`serve-desktop.ts`). The sidecar binds **loopback only** on port **4737** and serves the UI + `/api/control`. The Tauri window opens `/control`; same-machine OBS can use browser sources against the same server.
+
+**Prerequisites:** Rust (`rustc`/`cargo`), Xcode Command Line Tools (macOS), Bun.
+
+```bash
+bun install
+bun run tauri:dev      # builds UI + sidecar, then opens the desktop app
+bun run tauri:build    # produces a packaged .app / installer
+```
+
+Faster iteration when `ui/` packages are already built:
+
+```bash
+SKIP_UI_BUILD=1 bun run prepare:desktop
+bun run tauri:dev
+```
+
+`prepare:desktop` runs a Vite production build, writes a desktop `dist/client/index.html` shell (so the sidecar can SPA-serve `/control`, `/render/*`, and `/graphics/*` without the SSR runtime), then compiles the Bun sidecar.
+
+**OBS / external renderers (same Mac):**
+
+| Surface | URL |
+|---------|-----|
+| Control UI | `http://127.0.0.1:4737/control` |
+| Composite renderer | `http://127.0.0.1:4737/render/<rundownId>` |
+| Graphic template | `http://127.0.0.1:4737/graphics/...` |
+
+Override the port with `PORT` if needed (pass through when launching the app). SQLite lives in the OS app-data directory (`CONTROLLER_DB`), not inside the read-only bundle.
+
+Browser workflows (`bun run dev` / `bun run start`) are unchanged for remote OBS or non-desktop use.
 
 ## Graphics control plane
 
