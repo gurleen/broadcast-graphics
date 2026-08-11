@@ -1,5 +1,10 @@
 node_modules
 data/
+
+# Editor / IDE / local tooling
+.vscode/
+.cursor/
+.codegraph/
 .DS_Store
 dist
 dist-ssr
