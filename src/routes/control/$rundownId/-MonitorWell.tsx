@@ -35,47 +35,60 @@ export function MonitorWell({
     <div
       style={{
         width: '100%',
-        aspectRatio: '16/9',
-        background: transparent ? undefined : '#030405',
-        ...(transparent ? CHECKER : null),
-        border: `1px solid ${tally === 'off' ? 'var(--line-1)' : color}`,
-        borderRadius: 'var(--radius-1)',
-        position: 'relative',
-        overflow: 'hidden',
+        height: '100%',
+        containerType: 'size',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 0,
+        minWidth: 0,
         ...style,
       }}
     >
-      {src ? (
-        <iframe
-          title={caption}
-          src={src}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            border: 'none',
-            background: 'transparent',
-            colorScheme: 'normal',
-          }}
-        />
-      ) : (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontFamily: 'var(--font-mono)',
-            color,
-            fontSize: 12,
-            letterSpacing: '0.1em',
-          }}
-        >
-          {caption}
-        </div>
-      )}
+      <div
+        style={{
+          aspectRatio: '16/9',
+          width: 'min(100%, calc(100cqh * 16 / 9))',
+          background: transparent ? undefined : '#030405',
+          ...(transparent ? CHECKER : null),
+          border: `1px solid ${tally === 'off' ? 'var(--line-1)' : color}`,
+          borderRadius: 'var(--radius-1)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {src ? (
+          <iframe
+            title={caption}
+            src={src}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              background: 'transparent',
+              colorScheme: 'normal',
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'var(--font-mono)',
+              color,
+              fontSize: 12,
+              letterSpacing: '0.1em',
+            }}
+          >
+            {caption}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

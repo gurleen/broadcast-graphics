@@ -34,8 +34,7 @@ export function PvwMonitor({ instance, packages, templateMissing = false }: PvwM
   }, [])
 
   const tally = instance ? 'pvw' : 'off'
-  const color =
-    tally === 'pvw' ? 'var(--tally-pvw)' : 'var(--fg-3)'
+  const color = tally === 'pvw' ? 'var(--tally-pvw)' : 'var(--fg-3)'
   const scale = width > 0 ? width / GRAPHIC_WIDTH : 0
 
   let body: ReactNode
@@ -67,27 +66,49 @@ export function PvwMonitor({ instance, packages, templateMissing = false }: PvwM
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div
+      style={{
+        height: '100%',
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+      }}
+    >
       <div
-        ref={wellRef}
         style={{
-          width: '100%',
-          aspectRatio: '16/9',
-          background: '#030405',
-          border: `1px solid ${tally === 'off' ? 'var(--line-1)' : color}`,
-          borderRadius: 'var(--radius-1)',
-          position: 'relative',
-          overflow: 'hidden',
+          flex: 1,
+          minHeight: 0,
+          minWidth: 0,
+          containerType: 'size',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
-        {body}
+        <div
+          ref={wellRef}
+          style={{
+            aspectRatio: '16/9',
+            width: 'min(100%, calc(100cqh * 16 / 9))',
+            background: '#030405',
+            border: `1px solid ${tally === 'off' ? 'var(--line-1)' : color}`,
+            borderRadius: 'var(--radius-1)',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          {body}
+        </div>
       </div>
-      <Switch
-        labels={['OUT', 'IN']}
-        checked={previewOn}
-        onChange={setPreviewOn}
-        disabled={!instance || !Render}
-      />
+      <div style={{ flexShrink: 0 }}>
+        <Switch
+          labels={['OUT', 'IN']}
+          checked={previewOn}
+          onChange={setPreviewOn}
+          disabled={!instance || !Render}
+        />
+      </div>
     </div>
   )
 }

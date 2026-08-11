@@ -410,34 +410,72 @@ function PlayoutPage() {
           </div>
         </Panel>
 
-        <Panel title="PREVIEW / PROGRAM" style={{ width: 360, flexShrink: 0, minWidth: 0 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ minWidth: 0 }}>
+        <Panel
+          title="PREVIEW / PROGRAM"
+          style={{ width: 360, flexShrink: 0, minWidth: 0, minHeight: 0 }}
+          bodyStyle={{
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+            }}
+          >
+            <div
+              style={{
+                flex: 1,
+                minHeight: 0,
+                minWidth: 0,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
               <Tally
                 state={cued ? 'pvw' : 'off'}
                 sublabel="PVW"
                 label={cued ? cued.label : 'EMPTY'}
-                style={{ marginBottom: 6, width: '100%' }}
+                style={{ marginBottom: 6, width: '100%', flexShrink: 0 }}
               />
-              <PvwMonitor
-                instance={cued}
-                packages={packages}
-                templateMissing={cued ? missingInstanceIds.has(cued.id) : false}
-              />
+              <div style={{ flex: 1, minHeight: 0, minWidth: 0 }}>
+                <PvwMonitor
+                  instance={cued}
+                  packages={packages}
+                  templateMissing={cued ? missingInstanceIds.has(cued.id) : false}
+                />
+              </div>
             </div>
-            <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                flex: 1,
+                minHeight: 0,
+                minWidth: 0,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
               <Tally
                 state={showPgmFeed ? 'pgm' : 'off'}
                 sublabel="PGM"
                 label={pgmLabel ?? 'EMPTY'}
-                style={{ marginBottom: 6, width: '100%' }}
+                style={{ marginBottom: 6, width: '100%', flexShrink: 0 }}
               />
-              <MonitorWell
-                tally={showPgmFeed ? 'pgm' : 'off'}
-                caption={pgmLabel ?? 'NO SOURCE'}
-                src={showPgmFeed ? pgmSrc : null}
-                transparent
-              />
+              <div style={{ flex: 1, minHeight: 0, minWidth: 0 }}>
+                <MonitorWell
+                  tally={showPgmFeed ? 'pgm' : 'off'}
+                  caption={pgmLabel ?? 'NO SOURCE'}
+                  src={showPgmFeed ? pgmSrc : null}
+                  transparent
+                />
+              </div>
             </div>
           </div>
         </Panel>
