@@ -7,6 +7,9 @@ export type RundownListState = {
   error: string | null
   refresh: () => Promise<void>
   createRundown: (name: string) => Promise<Rundown | null>
+  renameRundown: (id: string, name: string) => Promise<boolean>
+  deleteRundown: (id: string) => Promise<boolean>
+  reorderRundowns: (orderedIds: string[]) => Promise<boolean>
 }
 
 /**
@@ -60,9 +63,92 @@ export function useRundownList(): RundownListState {
     [refresh],
   )
 
+  const renameRundown = useCallback(
+    async (id: string, name: string): Promise<boolean> => {
+      try {
+        const res = await fetch(`/api/control/rundowns/${id}/commands`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ type: 'rundown.rename', name }),
+        })
+        const body = (await res.json()) as { ok?: boolean; error?: { message?: string } }
+        if (!res.ok || !body.ok) {
+          throw new Error(body.error?.message ?? `HTTP ${res.status}`)
+        }
+        await refresh()
+        return true
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to rename rundown')
+        return false
+      }
+    },
+    [refresh],
+  )
+
+  const deleteRundown = useCallback(
+    async (id: string): Promise<boolean> => {
+      try {
+        const res = await fetch(`/api/control/rundowns/${id}/commands`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ type: 'rundown.delete' }),
+        })
+        const body = (await res.json()) as { ok?: boolean; error?: { message?: string } }
+        if (!res.ok || !body.ok) {
+          throw new Error(body.error?.message ?? `HTTP ${res.status}`)
+        }
+        await refresh()
+        return true
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to delete rundown')
+        return false
+      }
+    },
+    [refresh],
+  )
+
+  const reorderRundowns = useCallback(
+    async (orderedIds: string[]): Promise<boolean> => {
+      try {
+        const res = await fetch('/api/control/rundowns/reorder', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ orderedIds }),
+        })
+        const body = (await res.json()) as {
+          ok?: boolean
+          rundowns?: Rundown[]
+          error?: { message?: string }
+        }
+        if (!res.ok || !body.ok) {
+          throw new Error(body.error?.message ?? `HTTP ${res.status}`)
+        }
+        if (body.rundowns) {
+          setRundowns(body.rundowns)
+        } else {
+          await refresh()
+        }
+        return true
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to reorder rundowns')
+        return false
+      }
+    },
+    [refresh],
+  )
+
   useEffect(() => {
     void refresh()
   }, [refresh])
 
-  return { rundowns, loading, error, refresh, createRundown }
+  return {
+    rundowns,
+    loading,
+    error,
+    refresh,
+    createRundown,
+    renameRundown,
+    deleteRundown,
+    reorderRundowns,
+  }
 }

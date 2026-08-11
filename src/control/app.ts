@@ -234,6 +234,22 @@ app.post('/api/control/rundowns', async (c) => {
   return c.json({ ok: true, rundown, events: result.events }, 201)
 })
 
+app.post('/api/control/rundowns/reorder', async (c) => {
+  const body = (await c.req.json().catch(() => null)) as { orderedIds?: unknown } | null
+  if (!body || !Array.isArray(body.orderedIds) || !body.orderedIds.every((id) => typeof id === 'string')) {
+    return c.json(
+      { ok: false, error: { code: 'invalid_body', message: 'Expected { orderedIds: string[] }' } },
+      400,
+    )
+  }
+  const result = applyCommand({ type: 'rundown.reorder', orderedIds: body.orderedIds })
+  if (!result.ok) {
+    const status = result.error.code === 'not_found' ? 404 : 400
+    return c.json({ ok: false, error: result.error }, status)
+  }
+  return c.json({ ok: true, rundowns: store.listRundowns(), events: result.events })
+})
+
 app.get('/api/control/rundowns/:id', (c) => {
   const snapshot = buildSnapshot(c.req.param('id'))
   if (!snapshot) {

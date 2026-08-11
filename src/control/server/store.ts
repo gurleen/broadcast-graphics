@@ -8,6 +8,7 @@ type RundownRow = {
   created_at: number
   updated_at: number
   cued_instance_id: string | null
+  sort_order: number
 }
 
 type InstanceRow = {
@@ -30,6 +31,7 @@ function mapRundown(row: RundownRow): Rundown {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     cuedInstanceId: row.cued_instance_id,
+    sortOrder: row.sort_order,
   }
 }
 
@@ -56,7 +58,7 @@ function mapInstance(row: InstanceRow, cuedInstanceId: string | null): GraphicIn
 
 export function listRundowns(db: Database = getDb()): Rundown[] {
   return db
-    .query<RundownRow, []>('select * from rundowns order by created_at desc')
+    .query<RundownRow, []>('select * from rundowns order by sort_order asc, id asc')
     .all()
     .map(mapRundown)
 }
@@ -69,9 +71,13 @@ export function getRundown(id: string, db: Database = getDb()): Rundown | null {
 export function createRundown(name: string, db: Database = getDb()): Rundown {
   const now = Date.now()
   const id = crypto.randomUUID()
+  const maxSort = db
+    .query<{ m: number | null }, []>('select max(sort_order) as m from rundowns')
+    .get()?.m
+  const sortOrder = (maxSort ?? -1) + 1
   db.query(
-    'insert into rundowns (id, name, created_at, updated_at, cued_instance_id) values (?, ?, ?, ?, null)',
-  ).run(id, name, now, now)
+    'insert into rundowns (id, name, created_at, updated_at, cued_instance_id, sort_order) values (?, ?, ?, ?, null, ?)',
+  ).run(id, name, now, now, sortOrder)
   return getRundown(id, db)!
 }
 
@@ -87,6 +93,18 @@ export function renameRundown(id: string, name: string, db: Database = getDb()):
 export function deleteRundown(id: string, db: Database = getDb()): boolean {
   const result = db.query('delete from rundowns where id = ?').run(id)
   return result.changes > 0
+}
+
+export function reorderRundowns(orderedIds: string[], db: Database = getDb()): Rundown[] {
+  const now = Date.now()
+  const update = db.query('update rundowns set sort_order = ?, updated_at = ? where id = ?')
+  const tx = db.transaction(() => {
+    orderedIds.forEach((id, index) => {
+      update.run(index, now, id)
+    })
+  })
+  tx()
+  return listRundowns(db)
 }
 
 const ACTIVE_RUNDOWN_KEY = 'active_rundown_id'

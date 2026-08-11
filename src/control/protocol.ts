@@ -22,6 +22,10 @@ export const ControlCommand = z.discriminatedUnion('type', [
   }),
   z.object({ type: z.literal('rundown.delete'), rundownId: z.string() }),
   z.object({
+    type: z.literal('rundown.reorder'),
+    orderedIds: z.array(z.string()).min(1),
+  }),
+  z.object({
     type: z.literal('rundown.setActive'),
     /** `null` clears the default `/render` pointer. */
     rundownId: z.string().nullable(),

@@ -257,6 +257,38 @@ describe('commands + store', () => {
     expect(delB.ok).toBe(true)
     expect(store.getActiveRundownId()).toBeNull()
   })
+
+  test('creates rundowns in sort order and reorders them', () => {
+    const a = applyCommand({ type: 'rundown.create', name: 'A' })
+    const b = applyCommand({ type: 'rundown.create', name: 'B' })
+    const c = applyCommand({ type: 'rundown.create', name: 'C' })
+    expect(a.ok && b.ok && c.ok).toBe(true)
+    if (!a.ok || !b.ok || !c.ok) return
+
+    const listed = store.listRundowns()
+    expect(listed.map((r) => r.name)).toEqual(['A', 'B', 'C'])
+    expect(listed.map((r) => r.sortOrder)).toEqual([0, 1, 2])
+
+    const reordered = applyCommand({
+      type: 'rundown.reorder',
+      orderedIds: [c.rundownId!, a.rundownId!, b.rundownId!],
+    })
+    expect(reordered.ok).toBe(true)
+    if (!reordered.ok) return
+    expect(reordered.events.every((e) => e.type === 'rundown.upserted')).toBe(true)
+
+    const after = store.listRundowns()
+    expect(after.map((r) => r.name)).toEqual(['C', 'A', 'B'])
+    expect(after.map((r) => r.sortOrder)).toEqual([0, 1, 2])
+
+    const renamed = applyCommand({
+      type: 'rundown.rename',
+      rundownId: a.rundownId!,
+      name: 'Alpha',
+    })
+    expect(renamed.ok).toBe(true)
+    expect(store.getRundown(a.rundownId!)?.name).toBe('Alpha')
+  })
 })
 
 describe('aggregatePhase', () => {

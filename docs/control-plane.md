@@ -140,7 +140,7 @@ Invalid frames produce an `ack`/`error` with `code` + `message`; the socket stay
 
 ### Commands
 
-`rundown.create` · `rundown.rename` · `rundown.delete` · `rundown.setActive`  
+`rundown.create` · `rundown.rename` · `rundown.delete` · `rundown.reorder` · `rundown.setActive`  
 `instance.add` · `instance.remove` · `instance.relabel` · `instance.reorder`  
 `instance.patchProps` · `instance.replaceProps` · `instance.resetProps`  
 `playout.cue` · `playout.take` · `playout.in` · `playout.out` · `playout.toggle` · `playout.clearAll` · `playout.panic`

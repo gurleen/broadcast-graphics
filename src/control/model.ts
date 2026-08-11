@@ -24,6 +24,7 @@ export const Rundown = z.object({
   createdAt: z.number(),
   updatedAt: z.number(),
   cuedInstanceId: z.string().nullable(),
+  sortOrder: z.number().int(),
 })
 export type Rundown = z.infer<typeof Rundown>
 

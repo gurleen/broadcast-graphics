@@ -84,6 +84,33 @@ export function applyCommand(command: ControlCommand): CommandResult {
       return { ok: true, events, rundownId: command.rundownId }
     }
 
+    case 'rundown.reorder': {
+      const existing = store.listRundowns()
+      const existingIds = new Set(existing.map((r) => r.id))
+      if (command.orderedIds.length !== existing.length) {
+        return err('invalid_order', 'orderedIds must include every rundown exactly once')
+      }
+      for (const id of command.orderedIds) {
+        if (!existingIds.has(id)) {
+          return err('not_found', `Rundown ${id} not found`)
+        }
+      }
+      if (new Set(command.orderedIds).size !== command.orderedIds.length) {
+        return err('invalid_order', 'orderedIds must not contain duplicates')
+      }
+      const rundowns = store.reorderRundowns(command.orderedIds)
+      const events: ControlEvent[] = rundowns.map((rundown) => ({
+        type: 'rundown.upserted' as const,
+        rundown,
+      }))
+      for (const event of events) {
+        if (event.type === 'rundown.upserted') {
+          publish(event.rundown.id, event)
+        }
+      }
+      return { ok: true, events, rundownId: null }
+    }
+
     case 'rundown.setActive': {
       if (command.rundownId !== null) {
         const rundown = store.getRundown(command.rundownId)

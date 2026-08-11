@@ -1,6 +1,6 @@
 import type { Database } from 'bun:sqlite'
 
-const SCHEMA_VERSION = 2
+const SCHEMA_VERSION = 3
 
 /**
  * Versioned migrations. The abandoned unversioned rundowns/instances tables
@@ -82,6 +82,23 @@ export function runMigrations(db: Database): void {
         error text
       );
     `)
+  }
+
+  if (current < 3) {
+    const rundownCols = db
+      .query<{ name: string }, []>(`pragma table_info(rundowns)`)
+      .all()
+      .map((c) => c.name)
+    if (!rundownCols.includes('sort_order')) {
+      db.exec(`alter table rundowns add column sort_order integer not null default 0;`)
+    }
+    const existing = db
+      .query<{ id: string }, []>('select id from rundowns order by created_at asc, id asc')
+      .all()
+    const update = db.query('update rundowns set sort_order = ? where id = ?')
+    existing.forEach((r, index) => {
+      update.run(index, r.id)
+    })
   }
 
   if (current < SCHEMA_VERSION) {
