@@ -133,6 +133,38 @@ describe('commands + store', () => {
     expect(store.getInstance(instanceB.instance.id)?.playout.onScreen).toBe(false)
   })
 
+  test('playout.panic clears on-air instances and emits panic event', () => {
+    const created = applyCommand({ type: 'rundown.create', name: 'Show Panic' })
+    expect(created.ok).toBe(true)
+    if (!created.ok) return
+    const rundownId = created.rundownId!
+
+    const added = applyCommand({
+      type: 'instance.add',
+      rundownId,
+      templateId: 'labor-of-love-lower-third',
+      label: 'L3_PANIC',
+    })
+    expect(added.ok).toBe(true)
+    if (!added.ok) return
+
+    const upsert = added.events.find((e) => e.type === 'instance.upserted')
+    if (upsert?.type !== 'instance.upserted') throw new Error('missing upsert')
+
+    applyCommand({ type: 'playout.in', instanceId: upsert.instance.id })
+    expect(store.getInstance(upsert.instance.id)?.playout.onScreen).toBe(true)
+
+    const panicResult = applyCommand({ type: 'playout.panic', rundownId })
+    expect(panicResult.ok).toBe(true)
+    if (!panicResult.ok) return
+
+    expect(panicResult.events[0]?.type).toBe('playout.panic')
+    if (panicResult.events[0]?.type === 'playout.panic') {
+      expect(panicResult.events[0].rundownId).toBe(rundownId)
+    }
+    expect(store.getInstance(upsert.instance.id)?.playout.onScreen).toBe(false)
+  })
+
   test('patchProps bumps revision', () => {
     const created = applyCommand({ type: 'rundown.create', name: 'Show D' })
     if (!created.ok) throw new Error('create failed')

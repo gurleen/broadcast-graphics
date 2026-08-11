@@ -23,6 +23,7 @@ const EMPTY_STATE: RundownStoreState = {
   renderers: new Map(),
   seq: 0,
   error: null,
+  panicSeq: 0,
 }
 
 function pushLog(log: LogLine[], line: Omit<LogLine, 'id' | 'at'>): LogLine[] {
@@ -117,6 +118,7 @@ export function useRundownController(rundownId: string | null | undefined) {
     rundown: state.rundown,
     instances,
     renderers: [...state.renderers.values()],
+    panicSeq: state.panicSeq,
     error: state.error,
     log,
     clearLog: () => setLog([]),
@@ -128,6 +130,7 @@ export function useRundownController(rundownId: string | null | undefined) {
     out: (id: string) => send({ type: 'playout.out', instanceId: id }),
     toggle: (id: string) => send({ type: 'playout.toggle', instanceId: id }),
     clearAll: () => send({ type: 'playout.clearAll', rundownId: rundownId! }),
+    panic: () => send({ type: 'playout.panic', rundownId: rundownId! }),
     patchProps: (id: string, patch: Record<string, unknown>) =>
       send({ type: 'instance.patchProps', instanceId: id, patch }),
     replaceProps: (id: string, props: Record<string, unknown>) =>
@@ -190,6 +193,14 @@ export function useGraphicInstance(options: {
     },
     [instanceId, handle, instance?.revision],
   )
+
+  const prevPanicSeq = useRef(state.panicSeq)
+  useEffect(() => {
+    if (state.panicSeq > prevPanicSeq.current) {
+      reportPhase('offscreen', instance?.revision)
+    }
+    prevPanicSeq.current = state.panicSeq
+  }, [state.panicSeq, instance?.revision, reportPhase])
 
   const sendCommand = useCallback(
     (command: ControlCommand) =>

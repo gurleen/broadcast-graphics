@@ -119,6 +119,7 @@ function injectRundownId(command: ControlCommand, rundownId: string): ControlCom
     case 'playout.take':
       return { ...command, rundownId: command.rundownId || rundownId }
     case 'playout.clearAll':
+    case 'playout.panic':
       return { ...command, rundownId: command.rundownId || rundownId }
     case 'rundown.rename':
     case 'rundown.delete':

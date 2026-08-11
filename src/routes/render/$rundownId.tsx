@@ -18,7 +18,8 @@ export const Route = createFileRoute('/render/$rundownId')({
 function RenderRundown() {
   const { rundownId } = Route.useParams()
   const { preview, scale } = Route.useSearch()
-  const { instances, status } = useRundownController(rundownId)
+  const { instances, status, panicSeq } = useRundownController(rundownId)
+  const suppressLayers = panicSeq > 0 && !instances.some((i) => i.playout.onScreen)
 
   return (
     <GraphicStage preview={preview} scaleOverride={scale}>
@@ -47,7 +48,9 @@ function RenderRundown() {
             LINK {status.toUpperCase()}
           </div>
         ) : null}
-        {instances.map((instance) => {
+        {suppressLayers
+          ? null
+          : instances.map((instance) => {
           const Render = getTemplateRender(instance.templateId)
           if (!Render) return null
           return (

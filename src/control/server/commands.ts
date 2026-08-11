@@ -364,6 +364,33 @@ export function applyCommand(command: ControlCommand): CommandResult {
       return { ok: true, events, rundownId: command.rundownId }
     }
 
+    case 'playout.panic': {
+      const rundown = store.getRundown(command.rundownId)
+      if (!rundown) return err('not_found', `Rundown ${command.rundownId} not found`)
+      const before = store.listInstances(command.rundownId)
+      const onAir = before.filter((i) => i.playout.onScreen)
+      const at = Date.now()
+      store.clearAllOnScreen(command.rundownId)
+      const after = store.listInstances(command.rundownId)
+      const events: ControlEvent[] = [
+        { type: 'playout.panic', rundownId: command.rundownId, at },
+        ...after
+          .filter((i) => onAir.some((o) => o.id === i.id))
+          .flatMap((instance) => [
+            {
+              type: 'playout.changed' as const,
+              instanceId: instance.id,
+              rundownId: instance.rundownId,
+              playout: instance.playout,
+              revision: instance.revision,
+            },
+            { type: 'instance.upserted' as const, instance },
+          ]),
+      ]
+      publishMany(command.rundownId, events)
+      return { ok: true, events, rundownId: command.rundownId }
+    }
+
     default: {
       const _exhaustive: never = command
       return err('unknown_command', `Unhandled command ${(_exhaustive as ControlCommand).type}`)

@@ -139,13 +139,13 @@ Invalid frames produce an `ack`/`error` with `code` + `message`; the socket stay
 `rundown.create` · `rundown.rename` · `rundown.delete`  
 `instance.add` · `instance.remove` · `instance.relabel` · `instance.reorder`  
 `instance.patchProps` · `instance.replaceProps` · `instance.resetProps`  
-`playout.cue` · `playout.take` · `playout.in` · `playout.out` · `playout.toggle` · `playout.clearAll`
+`playout.cue` · `playout.take` · `playout.in` · `playout.out` · `playout.toggle` · `playout.clearAll` · `playout.panic`
 
 ### Events
 
 `rundown.upserted` · `rundown.removed`  
 `instance.upserted` · `instance.removed` · `instance.props` (delta for high-frequency edits)  
-`playout.changed` · `renderer.upserted` · `renderer.removed` · `error`
+`playout.changed` · `playout.panic` · `renderer.upserted` · `renderer.removed` · `error`
 
 ## Client hooks
 
@@ -156,7 +156,7 @@ Import from `#/control/client`.
 For a future control UI / operator surface:
 
 - State: `snapshot`, `instances`, `renderers`, `status`, `log`
-- Senders: `cue`, `take`, `in`, `out`, `toggle`, `clearAll`, `patchProps`, `replaceProps`, `addInstance`, `removeInstance`, `reorder`, …
+- Senders: `cue`, `take`, `in`, `out`, `toggle`, `clearAll`, `panic`, `patchProps`, `replaceProps`, `addInstance`, `removeInstance`, `reorder`, …
 
 ### `useControlledGraphic(template)`
 

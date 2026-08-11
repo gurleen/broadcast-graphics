@@ -68,6 +68,7 @@ export const ControlCommand = z.discriminatedUnion('type', [
   z.object({ type: z.literal('playout.out'), instanceId: z.string() }),
   z.object({ type: z.literal('playout.toggle'), instanceId: z.string() }),
   z.object({ type: z.literal('playout.clearAll'), rundownId: z.string() }),
+  z.object({ type: z.literal('playout.panic'), rundownId: z.string() }),
 ])
 export type ControlCommand = z.infer<typeof ControlCommand>
 
@@ -98,6 +99,11 @@ export const ControlEvent = z.discriminatedUnion('type', [
     revision: z.number().int(),
     /** When cue pointer moved, include the updated rundown. */
     rundown: Rundown.optional(),
+  }),
+  z.object({
+    type: z.literal('playout.panic'),
+    rundownId: z.string(),
+    at: z.number(),
   }),
   z.object({ type: z.literal('renderer.upserted'), renderer: RendererSession }),
   z.object({

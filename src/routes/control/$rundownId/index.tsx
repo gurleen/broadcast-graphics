@@ -5,6 +5,7 @@ import {
   Button,
   DataGrid,
   Dialog,
+  Input,
   LogConsole,
   Panel,
   useToast,
@@ -50,10 +51,13 @@ function PlayoutPage() {
     cue,
     take,
     clearAll,
+    panic,
+    panicSeq,
     patchProps,
     replaceProps,
     addInstance,
     removeInstance,
+    relabel,
     reorder,
   } = useRundownController(rundownId)
   const { templates } = useTemplateCatalog()
@@ -61,6 +65,8 @@ function PlayoutPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [removeOpen, setRemoveOpen] = useState(false)
+  const [renameOpen, setRenameOpen] = useState(false)
+  const [renameLabel, setRenameLabel] = useState('')
 
   // Keep selection valid as instances change.
   const selected = useMemo(() => {
@@ -85,7 +91,17 @@ function PlayoutPage() {
   const [pgmHoldLabel, setPgmHoldLabel] = useState<string | null>(null)
   const lastOnAirRef = useRef<GraphicInstance[]>([])
   const onAirRef = useRef(onAir)
+  const prevPanicSeqRef = useRef(panicSeq)
   onAirRef.current = onAir
+
+  useLayoutEffect(() => {
+    if (panicSeq > prevPanicSeqRef.current) {
+      lastOnAirRef.current = []
+      setShowPgmFeed(false)
+      setPgmHoldLabel(null)
+    }
+    prevPanicSeqRef.current = panicSeq
+  }, [panicSeq])
 
   useLayoutEffect(() => {
     const current = onAirRef.current
@@ -171,13 +187,6 @@ function PlayoutPage() {
     await run('Reorder', () => reorder(ordered))
   }
 
-  const moveSelected = async (dir: -1 | 1) => {
-    if (!selected || selectedIndex < 0) return
-    const nextIndex = selectedIndex + dir
-    if (nextIndex < 0 || nextIndex >= instances.length) return
-    await reorderByIndex(selectedIndex, nextIndex)
-  }
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%', minHeight: 0 }}>
       <div style={{ display: 'flex', gap: 12, flex: 1, minHeight: 0 }}>
@@ -191,7 +200,19 @@ function PlayoutPage() {
             <div style={{ display: 'flex', gap: 4 }}>
               <Button label="+" size="sm" variant="accent" onClick={() => setAddOpen(true)} />
               <Button
+                label="RENAME"
                 size="sm"
+                disabled={!selected || status !== 'open'}
+                title="Rename selected instance"
+                onClick={() => {
+                  if (!selected) return
+                  setRenameLabel(selected.label)
+                  setRenameOpen(true)
+                }}
+              />
+              <Button
+                size="sm"
+                variant="take"
                 disabled={!selected || status !== 'open'}
                 title="Remove selected instance"
                 onClick={() => setRemoveOpen(true)}
@@ -214,18 +235,6 @@ function PlayoutPage() {
                   />
                 </svg>
               </Button>
-              <Button
-                label="↑"
-                size="sm"
-                disabled={selectedIndex <= 0}
-                onClick={() => void moveSelected(-1)}
-              />
-              <Button
-                label="↓"
-                size="sm"
-                disabled={selectedIndex < 0 || selectedIndex >= instances.length - 1}
-                onClick={() => void moveSelected(1)}
-              />
             </div>
           }
         >
@@ -266,7 +275,7 @@ function PlayoutPage() {
               return (
                 <Button
                   label={programLive ? '■ STOP' : '▶ PLAY'}
-                  size="xl"
+                  size="lg"
                   variant={programLive ? 'take' : 'default'}
                   active={programLive}
                   disabled={status !== 'open' || (!programLive && !cued)}
@@ -300,12 +309,20 @@ function PlayoutPage() {
             })()}
             <Button
               label="BLANK"
-              size="xl"
+              size="lg"
               variant="armed"
               active={onAir.length > 0}
               disabled={status !== 'open' || onAir.length === 0}
               title="Clear all graphics from program"
               onClick={() => void run('Blank', () => clearAll())}
+            />
+            <Button
+              label="PANIC"
+              size="lg"
+              variant="take"
+              disabled={status !== 'open' || onAir.length === 0}
+              title="Clear program immediately (skip animations)"
+              onClick={() => void run('Panic', () => panic())}
             />
           </div>
         </Panel>
@@ -417,6 +434,38 @@ function PlayoutPage() {
           })
         }}
       />
+
+      <Dialog
+        open={renameOpen}
+        title="RENAME INSTANCE"
+        message="Enter a new label for this graphic."
+        detail={selected ? selected.label : undefined}
+        confirmLabel="RENAME"
+        confirmVariant="accent"
+        cancelLabel="CANCEL"
+        onCancel={() => setRenameOpen(false)}
+        onConfirm={() => {
+          if (!selected) {
+            setRenameOpen(false)
+            return
+          }
+          const trimmed = renameLabel.trim()
+          if (!trimmed) return
+          void run('Rename', () => relabel(selected.id, trimmed)).then((ok) => {
+            if (ok) setRenameOpen(false)
+          })
+        }}
+        width={360}
+      >
+        <div style={{ marginTop: 10 }}>
+          <Input
+            label="Label"
+            value={renameLabel}
+            onChange={setRenameLabel}
+            width="100%"
+          />
+        </div>
+      </Dialog>
     </div>
   )
 }

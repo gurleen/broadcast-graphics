@@ -16,6 +16,8 @@ export type RundownStoreState = {
   renderers: Map<string, RendererSession>
   seq: number
   error: { code: string; message: string } | null
+  /** Increments on playout.panic; resets when any instance goes on-air. */
+  panicSeq: number
 }
 
 type Listener = () => void
@@ -40,6 +42,7 @@ function emptyState(): RundownStoreState {
     renderers: new Map(),
     seq: 0,
     error: null,
+    panicSeq: 0,
   }
 }
 
@@ -52,6 +55,7 @@ function applySnapshot(state: RundownStoreState, snapshot: RundownSnapshot): Run
     renderers: new Map(snapshot.renderers.map((r) => [r.sessionId, r])),
     seq: snapshot.seq,
     error: null,
+    panicSeq: 0,
   }
 }
 
@@ -109,6 +113,9 @@ function applyEvent(state: RundownStoreState, seq: number, event: ControlEvent):
           revision: event.revision,
         })
       }
+      if (event.playout.onScreen) {
+        next.panicSeq = 0
+      }
       if (event.rundown) {
         next.rundown = event.rundown
         for (const [id, inst] of next.instances) {
@@ -123,6 +130,9 @@ function applyEvent(state: RundownStoreState, seq: number, event: ControlEvent):
       }
       break
     }
+    case 'playout.panic':
+      next.panicSeq = state.panicSeq + 1
+      break
     case 'renderer.upserted':
       next.renderers.set(event.renderer.sessionId, event.renderer)
       break
