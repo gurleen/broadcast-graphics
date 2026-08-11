@@ -32,7 +32,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
-          submodules: recursive
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -49,9 +48,6 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
-
-      - name: Install UI workspace
-        run: npm --prefix ui ci
 
       - name: Install dependencies
         run: bun install --frozen-lockfile --linker hoisted

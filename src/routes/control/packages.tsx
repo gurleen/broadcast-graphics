@@ -25,6 +25,8 @@ function PackagesPage() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const reimportFileRef = useRef<HTMLInputElement>(null)
+  const reimportTargetRef = useRef<string | null>(null)
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -79,23 +81,49 @@ function PackagesPage() {
     }
   }
 
+  const uploadPackage = async (file: File) => {
+    const form = new FormData()
+    form.set('file', file, file.name)
+    const res = await fetch('/api/control/packages', { method: 'POST', body: form })
+    const body = (await res.json().catch(() => null)) as {
+      ok?: boolean
+      error?: { message?: string }
+    } | null
+    if (!res.ok || !body?.ok) {
+      throw new Error(body?.error?.message ?? `HTTP ${res.status}`)
+    }
+  }
+
   const onUpload = async (file: File) => {
     setBusy(true)
     setError(null)
     try {
-      const form = new FormData()
-      form.set('file', file, file.name)
-      const res = await fetch('/api/control/packages', { method: 'POST', body: form })
-      const body = (await res.json().catch(() => null)) as {
-        ok?: boolean
-        error?: { message?: string }
-      } | null
-      if (!res.ok || !body?.ok) {
-        throw new Error(body?.error?.message ?? `HTTP ${res.status}`)
-      }
+      await uploadPackage(file)
       await refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const reimport = async (id: string, file: File) => {
+    setBusy(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/control/packages/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as {
+          error?: { message?: string }
+        } | null
+        throw new Error(body?.error?.message ?? `HTTP ${res.status}`)
+      }
+      await uploadPackage(file)
+      await refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Re-import failed')
     } finally {
       setBusy(false)
     }
@@ -150,6 +178,19 @@ function PackagesPage() {
               const f = e.target.files?.[0]
               e.target.value = ''
               if (f) void onUpload(f)
+            }}
+          />
+          <input
+            ref={reimportFileRef}
+            type="file"
+            accept=".js,.hgfx.js"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              const id = reimportTargetRef.current
+              e.target.value = ''
+              reimportTargetRef.current = null
+              if (f && id) void reimport(id, f)
             }}
           />
         </div>
@@ -218,8 +259,18 @@ function PackagesPage() {
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <Button
+                    label="RE-IMPORT"
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => {
+                      reimportTargetRef.current = pkg.id
+                      reimportFileRef.current?.click()
+                    }}
+                  />
+                  <Button
                     label="REMOVE"
                     size="sm"
+                    variant="take"
                     disabled={busy}
                     onClick={() => void remove(pkg.id)}
                   />
