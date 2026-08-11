@@ -1,0 +1,64 @@
+# Build HYDRA // GFX desktop installers for macOS and Windows.
+# Trigger manually from Actions → "Build Desktop App" (e.g. when cutting a release).
+name: Build Desktop App
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag, or commit SHA to build
+        required: false
+        default: main
+
+concurrency:
+  group: build-desktop-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macOS
+            runner: macos-latest
+          - label: Windows
+            runner: windows-latest
+
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          submodules: recursive
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build Tauri app
+        run: bun run tauri:build
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydra-gfx-${{ matrix.label }}
+          path: src-tauri/target/release/bundle/**
+          if-no-files-found: error
