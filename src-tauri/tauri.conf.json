@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "HYDRA // GFX",
+  "productName": "HYDRA GFX",
   "version": "0.1.0",
   "identifier": "io.dragonstv.broadcast-graphics",
   "build": {
