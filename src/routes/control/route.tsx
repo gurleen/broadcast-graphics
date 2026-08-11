@@ -80,19 +80,6 @@ function ControlShell() {
         >
           Packages
         </Link>
-        <Link
-          to="/"
-          style={{
-            padding: '0 10px',
-            color: 'var(--fg-2)',
-            textDecoration: 'none',
-            fontSize: 11,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-          }}
-        >
-          Home
-        </Link>
       </NavBar>
 
       <div style={{ flex: 1, minWidth: 0, minHeight: 0, overflow: 'auto', padding: 12 }}>
