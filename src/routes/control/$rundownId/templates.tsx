@@ -4,6 +4,7 @@ import { Badge, Button, DataGrid, Panel, PropertyEditor, Spinner, useToast } fro
 import type { DataGridRow, PropertyField } from '@hydra-tv/ui'
 import { useRundownController, useTemplateCatalog } from '#/control/client'
 import { AddInstanceDialog } from './-AddInstanceDialog'
+import { TemplatePreview } from './-TemplatePreview'
 
 export const Route = createFileRoute('/control/$rundownId/templates')({
   ssr: false,
@@ -13,7 +14,7 @@ export const Route = createFileRoute('/control/$rundownId/templates')({
 function TemplatesPage() {
   const { rundownId } = Route.useParams()
   const toast = useToast()
-  const { templates, loading, error } = useTemplateCatalog()
+  const { templates, packages, loading, error } = useTemplateCatalog()
   const { addInstance, status } = useRundownController(rundownId)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
@@ -84,7 +85,6 @@ function TemplatesPage() {
 
       <Panel
         title="TEMPLATE DETAIL"
-        meta={selected?.id}
         style={{ width: 320, flexShrink: 0 }}
         actions={
           selected ? (
@@ -106,6 +106,11 @@ function TemplatesPage() {
               variant="accent"
               disabled={status !== 'open'}
               onClick={() => setAddOpen(true)}
+            />
+            <TemplatePreview
+              templateId={selected.id}
+              defaults={selected.defaults}
+              packages={packages}
             />
           </div>
         ) : (
