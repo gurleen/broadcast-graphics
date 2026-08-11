@@ -38,6 +38,8 @@ function LaborOfLoveLowerThird() {
             <PreviewToolbarControls
               workerName={props.workerName}
               championshipName={props.championshipName}
+              workerNameFontSize={props.workerNameFontSize}
+              championshipNameFontSize={props.championshipNameFontSize}
               onChange={(patch) => patchProps(patch)}
             />
           </PreviewToolbarLayout>,

@@ -1,8 +1,9 @@
-import { basketballScorebugDefaultProps, type BasketballScorebugProps } from './-types'
-import { Button, FieldRow, Select } from '@gurleen-ui/core'
+import { Button, FieldRow } from '@gurleen-ui/core'
 import type { CSSProperties } from 'react'
+import { BasketballScorebugControls } from './-Controls'
+import { basketballScorebugDefaultProps, type BasketballScorebugProps } from './-types'
 
-export const PERIOD_OPTIONS = ['1ST', '2ND', 'HALF', '3RD', '4TH', 'OT', '2OT'] as const
+export { PERIOD_OPTIONS } from './-Controls'
 
 const rowCluster: CSSProperties = {
   display: 'flex',
@@ -15,36 +16,14 @@ const readout: CSSProperties = {
   fontFamily: 'var(--font-mono)',
   fontSize: 11,
   color: 'var(--fg-1)',
-  minWidth: '2ch',
+  minWidth: '3.5rem',
   textAlign: 'center',
   fontVariantNumeric: 'tabular-nums',
 }
 
-function numericScore(score: number | string): number {
-  const value = typeof score === 'number' ? score : Number.parseInt(score, 10)
-  return Number.isFinite(value) ? value : 0
-}
-
-function ScoreStepper({
-  label,
-  value,
-  onDelta,
-}: {
-  label: string
-  value: number | string
-  onDelta: (delta: number) => void
-}) {
-  return (
-    <FieldRow label={label}>
-      <div style={rowCluster}>
-        <Button label="−" size="sm" onClick={() => onDelta(-1)} />
-        <span style={readout}>{value}</span>
-        <Button label="+" size="sm" onClick={() => onDelta(1)} />
-      </div>
-    </FieldRow>
-  )
-}
-
+/**
+ * Preview toolbar wrapper: shared Controls plus local clock start/stop.
+ */
 export function PreviewToolbarControls({
   state,
   clockRunning,
@@ -58,54 +37,29 @@ export function PreviewToolbarControls({
     patch: Partial<BasketballScorebugProps> | ((prev: BasketballScorebugProps) => BasketballScorebugProps),
   ) => void
 }) {
-  const bumpScore = (side: 'home' | 'away', delta: number) => {
-    onStateChange((prev) => ({
-      ...prev,
-      [side]: {
-        ...prev[side],
-        score: Math.max(0, numericScore(prev[side].score) + delta),
-      },
-    }))
-  }
-
-  const bumpShotClock = (delta: number) => {
-    onStateChange((prev) => ({
-      ...prev,
-      shotClock: Math.max(0, numericScore(prev.shotClock) + delta),
-    }))
-  }
+  const patch = (next: Partial<BasketballScorebugProps>) => onStateChange(next)
+  const replace = (next: BasketballScorebugProps) => onStateChange(() => next)
 
   return (
     <div
       style={{
         display: 'flex',
         flexWrap: 'wrap',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         gap: 8,
         maxWidth: 'min(100vw, 72rem)',
       }}
     >
-      <ScoreStepper
-        label="Away"
-        value={state.away.score}
-        onDelta={(delta) => bumpScore('away', delta)}
+      <BasketballScorebugControls
+        props={state}
+        patch={patch}
+        replace={replace}
+        onScreen={false}
+        setOnScreen={() => {}}
       />
-      <ScoreStepper
-        label="Home"
-        value={state.home.score}
-        onDelta={(delta) => bumpScore('home', delta)}
-      />
-      <FieldRow label="Period">
-        <Select
-          value={state.period}
-          options={[...PERIOD_OPTIONS]}
-          onChange={(value: string) => onStateChange({ period: value })}
-          width={100}
-        />
-      </FieldRow>
-      <FieldRow label="Clock">
+      <FieldRow label="Run clock" divided={false}>
         <div style={rowCluster}>
-          <span style={{ ...readout, minWidth: '3.5rem' }}>{state.clock}</span>
+          <span style={readout}>{state.clock}</span>
           <Button
             label={clockRunning ? 'Stop' : 'Start'}
             size="sm"
@@ -120,18 +74,6 @@ export function PreviewToolbarControls({
               onClockRunningChange(false)
               onStateChange({ clock: basketballScorebugDefaultProps.clock })
             }}
-          />
-        </div>
-      </FieldRow>
-      <FieldRow label="Shot">
-        <div style={rowCluster}>
-          <Button label="−" size="sm" onClick={() => bumpShotClock(-1)} />
-          <span style={readout}>{state.shotClock}</span>
-          <Button label="+" size="sm" onClick={() => bumpShotClock(1)} />
-          <Button
-            label="Reset"
-            size="sm"
-            onClick={() => onStateChange({ shotClock: basketballScorebugDefaultProps.shotClock })}
           />
         </div>
       </FieldRow>

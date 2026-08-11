@@ -30,6 +30,7 @@ export function useControlledGraphic<TProps extends Record<string, unknown>>(
   const search = graphicsRoute.useSearch()
   const rundownId = typeof search.rundown === 'string' ? search.rundown : undefined
   const instanceId = typeof search.instance === 'string' ? search.instance : undefined
+  const forceOnScreen = Boolean(search.forceOnScreen)
   const controlled = Boolean(rundownId && instanceId)
 
   const [localProps, setLocalProps] = useState<TProps>(
@@ -43,12 +44,22 @@ export function useControlledGraphic<TProps extends Record<string, unknown>>(
     templateId: template.id,
   })
 
+  const props = controlled && remote.props ? (remote.props as TProps) : localProps
+
+  // PVW: wait for server props, then force onScreen so initial→visible plays the IN animation.
+  // Do not report phases — this embed is display-only and must not look like PGM.
+  const onScreen = forceOnScreen
+    ? Boolean(controlled && remote.props)
+    : controlled
+      ? remote.onScreen
+      : localOnScreen
+
   usePlaybackReporter({
     onScreen: controlled ? remote.onScreen : localOnScreen,
     revision: controlled ? remote.revision : 0,
     transition: template.transition,
     report: remote.reportPhase,
-    enabled: controlled,
+    enabled: controlled && !forceOnScreen,
   })
 
   // Seed local state from remote when first connected (optional convenience).
@@ -57,9 +68,6 @@ export function useControlledGraphic<TProps extends Record<string, unknown>>(
     setLocalProps(remote.props as TProps)
     setLocalOnScreen(remote.onScreen)
   }, [controlled, remote.revision]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const props = controlled && remote.props ? (remote.props as TProps) : localProps
-  const onScreen = controlled ? remote.onScreen : localOnScreen
 
   const sendCommand = remote.sendCommand
 

@@ -124,8 +124,13 @@ export function LaborOfLoveLowerThirdGraphic({
   props,
   onScreen,
 }: TemplateRenderProps<LaborOfLoveLowerThirdProps>) {
-  const { workerName, championshipName } = props
-  const textPaddingTop = championshipName ? 888 : 958
+  const {
+    workerName,
+    championshipName,
+    workerNameFontSize = 128,
+    championshipNameFontSize = 64,
+  } = props
+  const hasChampionship = championshipName.trim().length > 0
   const motionState = onScreen ? 'visible' : 'hidden'
 
   return (
@@ -152,7 +157,8 @@ export function LaborOfLoveLowerThirdGraphic({
           width="100%"
           height="100%"
           align="center"
-          paddingTop={textPaddingTop}
+          // Solo worker uses the same top as the two-line stack (was lower at 958).
+          paddingTop={888}
           gap={0}
         >
           <div
@@ -164,8 +170,18 @@ export function LaborOfLoveLowerThirdGraphic({
               gap: 0,
             }}
           >
-            <StaggeredLine text={championshipName} fontSize={64} animate={motionState} />
-            <StaggeredLine text={workerName} fontSize={128} animate={motionState} />
+            {hasChampionship ? (
+              <StaggeredLine
+                text={championshipName}
+                fontSize={championshipNameFontSize}
+                animate={motionState}
+              />
+            ) : null}
+            <StaggeredLine
+              text={workerName}
+              fontSize={workerNameFontSize}
+              animate={motionState}
+            />
           </div>
         </Column>
       </motion.div>

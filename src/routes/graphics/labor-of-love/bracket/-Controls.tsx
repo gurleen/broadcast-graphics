@@ -67,7 +67,16 @@ export function LaborOfLoveBracketControls({
   patch,
   replace,
 }: TemplateControlsProps<LaborOfLoveBracketProps>) {
-  const resolved = useMemo(() => resolveBracket(props), [props])
+  const resolved = useMemo(() => {
+    if (!props?.teams || !props?.winners?.qf || !props.winners.sf) return null
+    return resolveBracket(props)
+  }, [props])
+
+  if (!resolved) {
+    return (
+      <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>Loading bracket…</span>
+    )
+  }
 
   const setWinner = (round: 'qf' | 'sf' | 'final', index: number, winner: MatchWinner) => {
     replace({

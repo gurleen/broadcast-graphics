@@ -24,6 +24,23 @@ function Home() {
       </p>
 
       <section className="mt-10">
+        <h2 className="text-xl font-semibold">Control</h2>
+        <p className="mt-3 text-slate-400">
+          Operator surface for rundowns, playout, and template properties.
+        </p>
+        <ul className="mt-4 space-y-3">
+          <li>
+            <Link
+              to="/control"
+              className="font-medium text-sky-400 underline-offset-2 hover:underline"
+            >
+              /control
+            </Link>
+          </li>
+        </ul>
+      </section>
+
+      <section className="mt-10">
         <h2 className="text-xl font-semibold">Graphics</h2>
         {paths.length === 0 ? (
           <p className="mt-3 text-slate-400">No graphics yet.</p>

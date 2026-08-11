@@ -11,6 +11,11 @@ export const Route = createFileRoute('/graphics')({
         : undefined,
     rundown: typeof search.rundown === 'string' && search.rundown ? search.rundown : undefined,
     instance: typeof search.instance === 'string' && search.instance ? search.instance : undefined,
+    /** Force the IN animation (PVW monitor); ignores server playout intent for display. */
+    forceOnScreen:
+      search.forceOnScreen === true ||
+      search.forceOnScreen === '1' ||
+      search.forceOnScreen === 1,
   }),
   component: GraphicsLayout,
 })

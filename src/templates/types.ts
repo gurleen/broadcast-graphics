@@ -8,6 +8,7 @@ export type FieldDefType =
   | 'select'
   | 'checkbox'
   | 'switch'
+  | 'slider'
   | 'readonly'
 
 export type FieldDef = {
@@ -19,6 +20,10 @@ export type FieldDef = {
   unit?: string
   align?: 'left' | 'right'
   section?: string
+  /** Slider range (also usable as hints for number fields). */
+  min?: number
+  max?: number
+  step?: number
 }
 
 export type TemplateTransition = {

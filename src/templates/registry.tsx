@@ -7,6 +7,7 @@ import { LaborOfLoveBracketGraphic } from '#/routes/graphics/labor-of-love/brack
 import { LaborOfLoveBracketControls } from '#/routes/graphics/labor-of-love/bracket/-Controls'
 import { basketballScorebugTemplateSchema } from '#/routes/graphics/drexel/basketball-scorebug/-schema'
 import { BasketballScorebugGraphic } from '#/routes/graphics/drexel/basketball-scorebug/-Graphic'
+import { BasketballScorebugControls } from '#/routes/graphics/drexel/basketball-scorebug/-Controls'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TEMPLATES: TemplateDefinition<any>[] = [
@@ -22,6 +23,7 @@ const TEMPLATES: TemplateDefinition<any>[] = [
   {
     ...basketballScorebugTemplateSchema,
     Render: BasketballScorebugGraphic,
+    Controls: BasketballScorebugControls,
   },
 ]
 

@@ -22,6 +22,21 @@ export function GraphicStage({
   const stageRef = useRef<HTMLDivElement>(null)
   const [stageSize, setStageSize] = useState({ width: GRAPHIC_WIDTH, height: GRAPHIC_HEIGHT })
 
+  // Non-preview (OBS / monitor embeds): keep the document transparent so alpha composites.
+  useEffect(() => {
+    if (preview) return
+    const html = document.documentElement
+    const body = document.body
+    const prevHtml = html.style.background
+    const prevBody = body.style.background
+    html.style.background = 'transparent'
+    body.style.background = 'transparent'
+    return () => {
+      html.style.background = prevHtml
+      body.style.background = prevBody
+    }
+  }, [preview])
+
   useEffect(() => {
     const el = stageRef.current
     if (!el) return
