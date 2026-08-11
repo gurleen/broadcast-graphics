@@ -11,11 +11,28 @@ const root = path.dirname(fileURLToPath(import.meta.url))
 const config = defineConfig({
   resolve: {
     tsconfigPaths: true,
-    alias: {
-      '@gurleen-ui/core': path.join(root, 'ui/packages/core/dist/index.js'),
-      '@gurleen-ui/broadcast': path.join(root, 'ui/packages/broadcast/dist/index.js'),
-      '@gurleen-ui/tokens': path.join(root, 'ui/packages/tokens/src/index.css'),
-    },
+    alias: [
+      {
+        find: /^@hydra\/gfx-runtime\/(.*)$/,
+        replacement: path.join(root, 'packages/gfx-runtime/src/$1'),
+      },
+      {
+        find: '@hydra/gfx-runtime',
+        replacement: path.join(root, 'packages/gfx-runtime/src/index.ts'),
+      },
+      {
+        find: '@gurleen-ui/core',
+        replacement: path.join(root, 'ui/packages/core/dist/index.js'),
+      },
+      {
+        find: '@gurleen-ui/broadcast',
+        replacement: path.join(root, 'ui/packages/broadcast/dist/index.js'),
+      },
+      {
+        find: '@gurleen-ui/tokens',
+        replacement: path.join(root, 'ui/packages/tokens/src/index.css'),
+      },
+    ],
   },
   server: {
     watch: {

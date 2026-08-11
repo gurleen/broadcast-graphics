@@ -8,6 +8,8 @@
         "@gurleen-ui/broadcast": "file:ui/packages/broadcast",
         "@gurleen-ui/core": "file:ui/packages/core",
         "@gurleen-ui/tokens": "file:ui/packages/tokens",
+        "@hydra/gfx-runtime": "file:packages/gfx-runtime",
+        "@hydra/gfx-sdk": "file:packages/gfx-sdk",
         "@react-three/drei": "^10.7.7",
         "@react-three/fiber": "^9.7.0",
         "@tailwindcss/vite": "^4.1.18",
@@ -144,6 +146,10 @@
     "@gurleen-ui/core": ["@gurleen-ui/core@file:ui/packages/core", { "dependencies": { "@gurleen-ui/tokens": "0.1.0" }, "devDependencies": { "@types/react": "^18.3.12", "@types/react-dom": "^18.3.1", "tsup": "^8.3.5", "typescript": "^5.7.2" }, "peerDependencies": { "react": ">=18", "react-dom": ">=18" } }],
 
     "@gurleen-ui/tokens": ["@gurleen-ui/tokens@file:ui/packages/tokens", {}],
+
+    "@hydra/gfx-runtime": ["@hydra/gfx-runtime@file:packages/gfx-runtime", { "devDependencies": { "@types/react": "^19.2.0", "react": "^19.2.0", "typescript": "^6.0.2", "zod": "^4.4.3" }, "peerDependencies": { "react": "^19.0.0", "zod": "^4.0.0" } }],
+
+    "@hydra/gfx-sdk": ["@hydra/gfx-sdk@file:packages/gfx-sdk", { "dependencies": { "@hydra/gfx-runtime": "file:../gfx-runtime" }, "devDependencies": { "@types/react": "^19.2.0", "react": "^19.2.0", "typescript": "^6.0.2", "zod": "^4.4.3" }, "peerDependencies": { "react": "^19.0.0", "zod": "^4.0.0" }, "bin": { "hydra-gfx": "./src/cli.ts" } }],
 
     "@jridgewell/gen-mapping": ["@jridgewell/gen-mapping@0.3.13", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.0", "@jridgewell/trace-mapping": "^0.3.24" } }, "sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA=="],
 
@@ -842,6 +848,8 @@
     "@gurleen-ui/core/@types/react-dom": ["@types/react-dom@18.3.7", "", { "peerDependencies": { "@types/react": "^18.0.0" } }, "sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ=="],
 
     "@gurleen-ui/core/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
+
+    "@hydra/gfx-sdk/@hydra/gfx-runtime": ["@hydra/gfx-runtime@file:packages/gfx-runtime", {}],
 
     "@tailwindcss/node/lightningcss": ["lightningcss@1.32.0", "", { "dependencies": { "detect-libc": "^2.0.3" }, "optionalDependencies": { "lightningcss-android-arm64": "1.32.0", "lightningcss-darwin-arm64": "1.32.0", "lightningcss-darwin-x64": "1.32.0", "lightningcss-freebsd-x64": "1.32.0", "lightningcss-linux-arm-gnueabihf": "1.32.0", "lightningcss-linux-arm64-gnu": "1.32.0", "lightningcss-linux-arm64-musl": "1.32.0", "lightningcss-linux-x64-gnu": "1.32.0", "lightningcss-linux-x64-musl": "1.32.0", "lightningcss-win32-arm64-msvc": "1.32.0", "lightningcss-win32-x64-msvc": "1.32.0" } }, "sha512-NXYBzinNrblfraPGyrbPoD19C1h9lfI/1mzgWYvXUTe414Gz/X1FD2XBZSZM7rRTrMA8JL3OtAaGifrIKhQ5yQ=="],
 

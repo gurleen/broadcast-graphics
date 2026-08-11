@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { GraphicStage } from '#/graphics/GraphicStage'
-import { useRundownController } from '#/control/client'
-import { getTemplateRender } from '#/templates/registry'
+import { useRundownController, useTemplateCatalog } from '#/control/client'
+import { useTemplateComponents } from '#/packages/hooks'
+import { installClientRuntime } from '#/packages/runtime'
+import { useEffect } from 'react'
 
 export const Route = createFileRoute('/render/$rundownId')({
   ssr: false,
@@ -19,7 +21,14 @@ function RenderRundown() {
   const { rundownId } = Route.useParams()
   const { preview, scale } = Route.useSearch()
   const { instances, status, panicSeq } = useRundownController(rundownId)
+  const { packages } = useTemplateCatalog()
+  const templateIds = instances.map((i) => i.templateId)
+  const { byId, loading } = useTemplateComponents(templateIds, packages)
   const suppressLayers = panicSeq > 0 && !instances.some((i) => i.playout.onScreen)
+
+  useEffect(() => {
+    installClientRuntime()
+  }, [])
 
   return (
     <GraphicStage preview={preview} scaleOverride={scale}>
@@ -48,25 +57,43 @@ function RenderRundown() {
             LINK {status.toUpperCase()}
           </div>
         ) : null}
+        {loading && preview ? (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'grid',
+              placeItems: 'center',
+              color: 'rgba(255,255,255,0.5)',
+              fontFamily: 'monospace',
+              fontSize: 12,
+              zIndex: 9998,
+              pointerEvents: 'none',
+            }}
+          >
+            LOADING PACKAGES…
+          </div>
+        ) : null}
         {suppressLayers
           ? null
           : instances.map((instance) => {
-          const Render = getTemplateRender(instance.templateId)
-          if (!Render) return null
-          return (
-            <div
-              key={instance.id}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: instance.layer * 100 + instance.sortOrder,
-                pointerEvents: 'none',
-              }}
-            >
-              <Render props={instance.props} onScreen={instance.playout.onScreen} />
-            </div>
-          )
-        })}
+              const def = byId.get(instance.templateId)
+              if (!def) return null
+              const Render = def.Render
+              return (
+                <div
+                  key={instance.id}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: instance.layer * 100 + instance.sortOrder,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <Render props={instance.props} onScreen={instance.playout.onScreen} />
+                </div>
+              )
+            })}
       </div>
     </GraphicStage>
   )

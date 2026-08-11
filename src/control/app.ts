@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { upgradeWebSocket, websocket } from 'hono/bun'
-import { listTemplatesPublic } from '#/templates/schemas'
+import { listPackagesPublic, listTemplatesPublic } from '#/templates/schemas'
 import {
   PROTOCOL_VERSION,
   parseClientMessage,
@@ -14,12 +14,22 @@ import * as store from '#/control/server/store'
 import { subscribe as hubSubscribe } from '#/control/server/hub'
 import {
   createSession,
+  listAllSessions,
   listSessionsForRundown,
   removeSession,
   reportPhase,
   touchSession,
   type LiveSession,
 } from '#/control/server/sessions'
+import {
+  ensurePackagesLoaded,
+  installPackageFile,
+  listLoadedPackages,
+  readPackageBundle,
+  reloadPackages,
+  removePackage,
+  startPackagesWatcher,
+} from '#/control/server/packages'
 
 export { websocket }
 
@@ -34,7 +44,11 @@ function ensureHubWired() {
   if (g.__controllerHubUnsub) return
   g.__controllerHubUnsub = hubSubscribe((seq, event, rundownId) => {
     const payload = jsonMessage({ type: 'event', seq, event })
-    for (const session of listSessionsForRundown(rundownId)) {
+    const sessions =
+      rundownId === '*' || event.type === 'packages.changed'
+        ? listAllSessions()
+        : listSessionsForRundown(rundownId)
+    for (const session of sessions) {
       try {
         session.send(payload)
       } catch {
@@ -45,13 +59,135 @@ function ensureHubWired() {
 }
 ensureHubWired()
 
+void ensurePackagesLoaded()
+  .then(() => startPackagesWatcher())
+  .catch((err) => console.error('[packages] boot load failed', err))
+
 const app = new Hono()
 
 app.get('/api/control/health', (c) =>
   c.json({ ok: true, protocolVersion: PROTOCOL_VERSION, serverTime: Date.now() }),
 )
 
-app.get('/api/control/templates', (c) => c.json({ templates: listTemplatesPublic() }))
+app.get('/api/control/templates', async (c) => {
+  await ensurePackagesLoaded()
+  return c.json({
+    templates: listTemplatesPublic(),
+    packages: listPackagesPublic(),
+  })
+})
+
+app.get('/api/control/packages', async (c) => {
+  await ensurePackagesLoaded()
+  return c.json({
+    packages: listLoadedPackages().map((p) => ({
+      id: p.id,
+      name: p.name,
+      version: p.version,
+      contentHash: p.contentHash,
+      formatVersion: p.formatVersion,
+      bundleUrl: p.bundleUrl,
+      error: p.error,
+      templateIds: p.templates.map((t) => t.id),
+      templateCount: p.templates.length,
+    })),
+  })
+})
+
+app.post('/api/control/packages/reload', async (c) => {
+  const packages = await reloadPackages()
+  return c.json({
+    ok: true,
+    packages: packages.map((p) => ({
+      id: p.id,
+      name: p.name,
+      version: p.version,
+      error: p.error,
+      templateCount: p.templates.length,
+    })),
+  })
+})
+
+app.post('/api/control/packages', async (c) => {
+  const contentType = c.req.header('content-type') ?? ''
+  try {
+    if (contentType.includes('multipart/form-data')) {
+      const form = await c.req.formData()
+      const file = form.get('file')
+      if (!(file instanceof File)) {
+        return c.json(
+          { ok: false, error: { code: 'invalid_body', message: 'Expected file field' } },
+          400,
+        )
+      }
+      const bytes = new Uint8Array(await file.arrayBuffer())
+      const name = file.name || 'package.hgfx.js'
+      const loaded = await installPackageFile(name, bytes, 'upload')
+      return c.json(
+        { ok: true, package: { id: loaded.id, name: loaded.name, version: loaded.version } },
+        201,
+      )
+    }
+
+    const filename = c.req.query('filename') || c.req.header('x-filename') || 'package.hgfx.js'
+    const bytes = new Uint8Array(await c.req.arrayBuffer())
+    if (!bytes.byteLength) {
+      return c.json({ ok: false, error: { code: 'invalid_body', message: 'Empty body' } }, 400)
+    }
+    const loaded = await installPackageFile(filename, bytes, 'upload')
+    return c.json(
+      { ok: true, package: { id: loaded.id, name: loaded.name, version: loaded.version } },
+      201,
+    )
+  } catch (err) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'install_failed',
+          message: err instanceof Error ? err.message : String(err),
+        },
+      },
+      400,
+    )
+  }
+})
+
+app.delete('/api/control/packages/:id', async (c) => {
+  const id = c.req.param('id')
+  try {
+    await removePackage(id)
+    return c.json({ ok: true })
+  } catch (err) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'remove_failed',
+          message: err instanceof Error ? err.message : String(err),
+        },
+      },
+      400,
+    )
+  }
+})
+
+app.get('/api/control/packages/:id/bundle.js', async (c) => {
+  const id = c.req.param('id')
+  const bundle = await readPackageBundle(id)
+  if (!bundle) {
+    return c.json({ ok: false, error: { code: 'not_found', message: 'Package not found' } }, 404)
+  }
+  return new Response(bundle.bytes, {
+    status: 200,
+    headers: {
+      'content-type': 'text/javascript; charset=utf-8',
+      'cache-control': 'no-store',
+      'x-content-hash': bundle.contentHash,
+      'access-control-allow-origin': '*',
+    },
+  })
+})
 
 app.get('/api/control/rundowns', (c) => c.json({ rundowns: store.listRundowns() }))
 

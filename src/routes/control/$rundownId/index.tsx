@@ -60,7 +60,7 @@ function PlayoutPage() {
     relabel,
     reorder,
   } = useRundownController(rundownId)
-  const { templates } = useTemplateCatalog()
+  const { templates, loading: templatesLoading } = useTemplateCatalog()
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
@@ -83,6 +83,23 @@ function PlayoutPage() {
   const onAirKey = onAir.map((i) => i.id).join(',')
 
   const templateById = useMemo(() => new Map(templates.map((t) => [t.id, t])), [templates])
+
+  const missingTemplateInstances = useMemo(() => {
+    // Avoid flashing warnings while the catalog is still loading.
+    if (templatesLoading) return [] as GraphicInstance[]
+    return instances.filter((inst) => !templateById.has(inst.templateId))
+  }, [instances, templateById, templatesLoading])
+
+  const missingTemplateIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const inst of missingTemplateInstances) ids.add(inst.templateId)
+    return [...ids].sort()
+  }, [missingTemplateInstances])
+
+  const missingInstanceIds = useMemo(
+    () => new Set(missingTemplateInstances.map((i) => i.id)),
+    [missingTemplateInstances],
+  )
 
   // Keep PGM iframe mounted across the OUT animation. State must stay true when
   // onAir drops to [] — flipping it false even for one commit remounts the iframe
@@ -137,6 +154,7 @@ function PlayoutPage() {
     label: inst.label,
     template: templateById.get(inst.templateId)?.name ?? inst.templateId,
     phase: inst.playout.onScreen ? 'IN' : inst.playout.cued ? 'CUED' : 'OUT',
+    _missingTemplate: missingInstanceIds.has(inst.id),
     _state: inst.playout.onScreen ? 'onair' : inst.playout.cued ? 'cued' : undefined,
     _instance: inst,
   }))
@@ -189,6 +207,41 @@ function PlayoutPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%', minHeight: 0 }}>
+      {missingTemplateInstances.length > 0 ? (
+        <div
+          role="alert"
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: '8px 12px',
+            border: '1px solid var(--warn)',
+            background: 'var(--warn-bg, color-mix(in srgb, var(--warn) 12%, transparent))',
+            color: 'var(--fg-1)',
+            fontSize: 11,
+            lineHeight: 1.4,
+          }}
+        >
+          <Badge kind="warn" label="MISSING TEMPLATE" />
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontWeight: 600 }}>
+              {missingTemplateInstances.length === 1
+                ? '1 rundown item references a template that is not installed'
+                : `${missingTemplateInstances.length} rundown items reference templates that are not installed`}
+            </div>
+            <div style={{ color: 'var(--fg-3)', marginTop: 2 }}>
+              {missingTemplateIds.map((id) => (
+                <code key={id} style={{ marginRight: 8 }}>
+                  {id}
+                </code>
+              ))}
+              — reinstall the package or remove the affected items.
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div style={{ display: 'flex', gap: 12, flex: 1, minHeight: 0 }}>
         <Panel
           title="RUNDOWN"
@@ -243,7 +296,49 @@ function PlayoutPage() {
               columns={[
                 { key: 'index', label: '#', width: '36px', dim: true },
                 { key: 'label', label: 'Name' },
-                { key: 'template', label: 'Type', width: '110px', dim: true },
+                {
+                  key: 'template',
+                  label: 'Type',
+                  width: '130px',
+                  dim: true,
+                  render: (value, row) =>
+                    row._missingTemplate ? (
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          minWidth: 0,
+                          color: 'var(--warn)',
+                        }}
+                        title={`Template not found: ${row._instance?.templateId ?? value}`}
+                      >
+                        <span
+                          style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            letterSpacing: '0.08em',
+                            textTransform: 'uppercase',
+                            flexShrink: 0,
+                          }}
+                        >
+                          Missing
+                        </span>
+                        <span
+                          style={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            color: 'var(--fg-3)',
+                          }}
+                        >
+                          {String(value)}
+                        </span>
+                      </span>
+                    ) : (
+                      String(value ?? '')
+                    ),
+                },
                 { key: 'phase', label: 'State', width: '48px', align: 'right', dim: true },
               ]}
               rows={rows}
@@ -338,7 +433,13 @@ function PlayoutPage() {
               />
               <MonitorWell
                 tally={cued ? 'pvw' : 'off'}
-                caption={cued ? cued.label : 'NO SOURCE'}
+                caption={
+                  cued && missingInstanceIds.has(cued.id)
+                    ? 'TEMPLATE MISSING'
+                    : cued
+                      ? cued.label
+                      : 'NO SOURCE'
+                }
                 src={pvwSrc}
               />
             </div>
@@ -363,6 +464,7 @@ function PlayoutPage() {
           <PropertyPanel
             instance={selected}
             template={selected ? templateById.get(selected.templateId) : undefined}
+            templateMissing={selected ? missingInstanceIds.has(selected.id) : false}
             onPatch={(patch) => {
               if (!selected) return
               void patchProps(selected.id, patch).then((result) => {

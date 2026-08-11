@@ -1,0 +1,27 @@
+{
+  "name": "hgfx-package-example",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun ../../packages/gfx-sdk/src/cli.ts build --out ../../data/packages",
+    "watch": "bun ../../packages/gfx-sdk/src/cli.ts build --watch --out ../../data/packages"
+  },
+  "dependencies": {
+    "@gurleen-ui/core": "file:../../ui/packages/core",
+    "@gurleen-ui/tokens": "file:../../ui/packages/tokens",
+    "@hydra/gfx-runtime": "file:../../packages/gfx-runtime",
+    "@hydra/gfx-sdk": "file:../../packages/gfx-sdk",
+    "gsap": "^3.13.0",
+    "motion": "^12.43.0",
+    "react": "^19.2.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "typescript": "^6.0.2"
+  },
+  "overrides": {
+    "@gurleen-ui/tokens": "file:../../ui/packages/tokens"
+  }
+}

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { TemplatePublicMeta } from '#/templates/schemas'
+import type { PackagePublicMeta, TemplatePublicMeta } from '#/templates/schemas'
 
 export type TemplateCatalogState = {
   templates: TemplatePublicMeta[]
+  packages: PackagePublicMeta[]
   loading: boolean
   error: string | null
   refresh: () => Promise<void>
@@ -13,24 +14,35 @@ export type TemplateCatalogState = {
  */
 export function useTemplateCatalog(): TemplateCatalogState {
   const [templates, setTemplates] = useState<TemplatePublicMeta[]>([])
+  const [packages, setPackages] = useState<PackagePublicMeta[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const refresh = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+  const refresh = useCallback(async (opts?: { silent?: boolean }) => {
+    if (!opts?.silent) {
+      setLoading(true)
+      setError(null)
+    }
     try {
       const res = await fetch('/api/control/templates')
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`)
       }
-      const body = (await res.json()) as { templates?: TemplatePublicMeta[] }
+      const body = (await res.json()) as {
+        templates?: TemplatePublicMeta[]
+        packages?: PackagePublicMeta[]
+      }
       setTemplates(body.templates ?? [])
+      setPackages(body.packages ?? [])
+      setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load templates')
-      setTemplates([])
+      if (!opts?.silent) {
+        setTemplates([])
+        setPackages([])
+      }
     } finally {
-      setLoading(false)
+      if (!opts?.silent) setLoading(false)
     }
   }, [])
 
@@ -38,5 +50,19 @@ export function useTemplateCatalog(): TemplateCatalogState {
     void refresh()
   }, [refresh])
 
-  return { templates, loading, error, refresh }
+  useEffect(() => {
+    const onPackagesChanged = () => {
+      void refresh({ silent: true })
+    }
+    window.addEventListener('hydra:packages-changed', onPackagesChanged)
+    return () => window.removeEventListener('hydra:packages-changed', onPackagesChanged)
+  }, [refresh])
+
+  return {
+    templates,
+    packages,
+    loading,
+    error,
+    refresh: () => refresh(),
+  }
 }

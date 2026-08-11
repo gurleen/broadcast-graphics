@@ -1,6 +1,6 @@
 import type { Database } from 'bun:sqlite'
 
-const SCHEMA_VERSION = 1
+const SCHEMA_VERSION = 2
 
 /**
  * Versioned migrations. The abandoned unversioned rundowns/instances tables
@@ -65,7 +65,26 @@ export function runMigrations(db: Database): void {
       create index if not exists instances_rundown_idx
         on instances(rundown_id, sort_order);
     `)
+  }
 
+  if (current < 2) {
+    db.exec(`
+      create table if not exists packages (
+        id text primary key,
+        file text not null,
+        name text not null,
+        version text not null,
+        content_hash text not null,
+        format_version integer not null,
+        enabled integer not null default 1,
+        source text not null default 'disk',
+        installed_at integer not null,
+        error text
+      );
+    `)
+  }
+
+  if (current < SCHEMA_VERSION) {
     db.query('insert or replace into meta (key, value) values (?, ?)').run(
       'schema_version',
       String(SCHEMA_VERSION),

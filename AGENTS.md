@@ -1,6 +1,6 @@
 # AGENTS.md — HYDRA // GFX
 
-Orientation for coding agents working in this repo. Read this before editing. For the `@gurleen-ui` submodule specifically, also read [`ui/AGENTS.md`](./ui/AGENTS.md). Control-plane protocol detail: [`docs/control-plane.md`](./docs/control-plane.md).
+Orientation for coding agents working in this repo. Read this before editing. For the `@gurleen-ui` submodule specifically, also read [`ui/AGENTS.md`](./ui/AGENTS.md). Control-plane protocol detail: [`docs/control-plane.md`](./docs/control-plane.md). Dynamic template packages: [`docs/template-packages.md`](./docs/template-packages.md).
 
 ## What this repo is
 
@@ -28,9 +28,12 @@ Product brand string: `HYDRA // GFX` (document title, NavBar brand, Tauri `produ
 |------|------|
 | `src/routes/` | TanStack file routes (`/`, `/control`, `/graphics`, `/render`) |
 | `src/control/` | Control plane: Hono app, protocol, SQLite server, React client hooks |
-| `src/templates/` | Dual template registries (`schemas.ts` server-safe, `registry.tsx` client) |
-| `src/graphics/` | R3F/WebGL engine + `GraphicStage` + preview toolbar |
-| `src/html/` | DOM/`HtmlCanvas` engine (what live templates use today) |
+| `src/templates/` | Dual template registries (`schemas.ts` server-safe, `registry.tsx` / `registry-static.ts` client) |
+| `src/packages/` | Dynamic `.hgfx.js` package runtime registry + browser loader |
+| `packages/gfx-runtime` | Shared template engine (`HtmlCanvas`, colors, types) — also used by external packages |
+| `packages/gfx-sdk` | `definePackage` / `hydra-gfx build` CLI for compiling package artifacts |
+| `examples/hgfx-package-example` | Sample external package (motion + gsap templates) |
+| `src/html/` | Re-exports from `@hydra/gfx-runtime` (compat shims) |
 | `server/app.ts` | Re-export of control Hono app for Bun servers |
 | `scripts/` | Desktop prepare / sidecar / SPA index writer |
 | `src-tauri/` | Tauri shell; navigates to `/` after sidecar READY |
@@ -74,11 +77,13 @@ Route files prefixed with `-` (e.g. `-Graphic.tsx`, `-schema.ts`) are **not** ro
 
 Copy an existing folder (`labor-of-love/lower-third` or `drexel/basketball-scorebug`) rather than inventing a new layout from scratch.
 
+**External packages:** templates can also ship as compiled `.hgfx.js` artifacts from separate repos (no static registry edit). See [`docs/template-packages.md`](./docs/template-packages.md) and `examples/hgfx-package-example`. Install via `/control/packages` or `data/packages/`; routes are `/graphics/p/<packageId>/<templateId>`.
+
 ### Engines
 
 | Engine | Use when |
 |--------|----------|
-| `src/html` (`HtmlCanvas`) | Default — DOM + Motion; all current live templates |
+| `@hydra/gfx-runtime` / `src/html` (`HtmlCanvas`) | Default — DOM + Motion; all current live templates |
 | `src/graphics` (`GraphicCanvas`) | R3F / Yoga WebGL when GPU/3D layout is required |
 
 Shared frame size: `GRAPHIC_WIDTH` / `GRAPHIC_HEIGHT` in `src/graphics/constants.ts` (1920×1080).

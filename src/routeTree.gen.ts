@@ -14,6 +14,7 @@ import { Route as ControlRouteRouteImport } from './routes/control/route'
 import { Route as GraphicsRouteRouteImport } from './routes/graphics/route'
 import { Route as ControlIndexRouteImport } from './routes/control/index'
 import { Route as ControlRundownIdRouteRouteImport } from './routes/control/$rundownId/route'
+import { Route as ControlPackagesRouteImport } from './routes/control/packages'
 import { Route as RenderRundownIdRouteImport } from './routes/render/$rundownId'
 import { Route as ControlRundownIdIndexRouteImport } from './routes/control/$rundownId/index'
 import { Route as ControlRundownIdRenderersRouteImport } from './routes/control/$rundownId/renderers'
@@ -21,6 +22,7 @@ import { Route as ControlRundownIdTemplatesRouteImport } from './routes/control/
 import { Route as GraphicsDrexelBasketballScorebugRouteRouteImport } from './routes/graphics/drexel/basketball-scorebug/route'
 import { Route as GraphicsLaborOfLoveBracketRouteRouteImport } from './routes/graphics/labor-of-love/bracket/route'
 import { Route as GraphicsLaborOfLoveLowerThirdRouteRouteImport } from './routes/graphics/labor-of-love/lower-third/route'
+import { Route as GraphicsPSplatRouteImport } from './routes/graphics/p/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -45,6 +47,11 @@ const ControlIndexRoute = ControlIndexRouteImport.update({
 const ControlRundownIdRouteRoute = ControlRundownIdRouteRouteImport.update({
   id: '/$rundownId',
   path: '/$rundownId',
+  getParentRoute: () => ControlRouteRoute,
+} as any)
+const ControlPackagesRoute = ControlPackagesRouteImport.update({
+  id: '/packages',
+  path: '/packages',
   getParentRoute: () => ControlRouteRoute,
 } as any)
 const RenderRundownIdRoute = RenderRundownIdRouteImport.update({
@@ -87,12 +94,18 @@ const GraphicsLaborOfLoveLowerThirdRouteRoute =
     path: '/labor-of-love/lower-third',
     getParentRoute: () => GraphicsRouteRoute,
   } as any)
+const GraphicsPSplatRoute = GraphicsPSplatRouteImport.update({
+  id: '/p/$',
+  path: '/p/$',
+  getParentRoute: () => GraphicsRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/control': typeof ControlRouteRouteWithChildren
   '/graphics': typeof GraphicsRouteRouteWithChildren
   '/control/$rundownId': typeof ControlRundownIdRouteRouteWithChildren
+  '/control/packages': typeof ControlPackagesRoute
   '/render/$rundownId': typeof RenderRundownIdRoute
   '/control/': typeof ControlIndexRoute
   '/graphics/drexel/basketball-scorebug': typeof GraphicsDrexelBasketballScorebugRouteRoute
@@ -100,11 +113,13 @@ export interface FileRoutesByFullPath {
   '/graphics/labor-of-love/lower-third': typeof GraphicsLaborOfLoveLowerThirdRouteRoute
   '/control/$rundownId/renderers': typeof ControlRundownIdRenderersRoute
   '/control/$rundownId/templates': typeof ControlRundownIdTemplatesRoute
+  '/graphics/p/$': typeof GraphicsPSplatRoute
   '/control/$rundownId/': typeof ControlRundownIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/graphics': typeof GraphicsRouteRouteWithChildren
+  '/control/packages': typeof ControlPackagesRoute
   '/render/$rundownId': typeof RenderRundownIdRoute
   '/control': typeof ControlIndexRoute
   '/graphics/drexel/basketball-scorebug': typeof GraphicsDrexelBasketballScorebugRouteRoute
@@ -112,6 +127,7 @@ export interface FileRoutesByTo {
   '/graphics/labor-of-love/lower-third': typeof GraphicsLaborOfLoveLowerThirdRouteRoute
   '/control/$rundownId/renderers': typeof ControlRundownIdRenderersRoute
   '/control/$rundownId/templates': typeof ControlRundownIdTemplatesRoute
+  '/graphics/p/$': typeof GraphicsPSplatRoute
   '/control/$rundownId': typeof ControlRundownIdIndexRoute
 }
 export interface FileRoutesById {
@@ -120,6 +136,7 @@ export interface FileRoutesById {
   '/control': typeof ControlRouteRouteWithChildren
   '/graphics': typeof GraphicsRouteRouteWithChildren
   '/control/$rundownId': typeof ControlRundownIdRouteRouteWithChildren
+  '/control/packages': typeof ControlPackagesRoute
   '/render/$rundownId': typeof RenderRundownIdRoute
   '/control/': typeof ControlIndexRoute
   '/graphics/drexel/basketball-scorebug': typeof GraphicsDrexelBasketballScorebugRouteRoute
@@ -127,6 +144,7 @@ export interface FileRoutesById {
   '/graphics/labor-of-love/lower-third': typeof GraphicsLaborOfLoveLowerThirdRouteRoute
   '/control/$rundownId/renderers': typeof ControlRundownIdRenderersRoute
   '/control/$rundownId/templates': typeof ControlRundownIdTemplatesRoute
+  '/graphics/p/$': typeof GraphicsPSplatRoute
   '/control/$rundownId/': typeof ControlRundownIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -136,6 +154,7 @@ export interface FileRouteTypes {
     | '/control'
     | '/graphics'
     | '/control/$rundownId'
+    | '/control/packages'
     | '/render/$rundownId'
     | '/control/'
     | '/graphics/drexel/basketball-scorebug'
@@ -143,11 +162,13 @@ export interface FileRouteTypes {
     | '/graphics/labor-of-love/lower-third'
     | '/control/$rundownId/renderers'
     | '/control/$rundownId/templates'
+    | '/graphics/p/$'
     | '/control/$rundownId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/graphics'
+    | '/control/packages'
     | '/render/$rundownId'
     | '/control'
     | '/graphics/drexel/basketball-scorebug'
@@ -155,6 +176,7 @@ export interface FileRouteTypes {
     | '/graphics/labor-of-love/lower-third'
     | '/control/$rundownId/renderers'
     | '/control/$rundownId/templates'
+    | '/graphics/p/$'
     | '/control/$rundownId'
   id:
     | '__root__'
@@ -162,6 +184,7 @@ export interface FileRouteTypes {
     | '/control'
     | '/graphics'
     | '/control/$rundownId'
+    | '/control/packages'
     | '/render/$rundownId'
     | '/control/'
     | '/graphics/drexel/basketball-scorebug'
@@ -169,6 +192,7 @@ export interface FileRouteTypes {
     | '/graphics/labor-of-love/lower-third'
     | '/control/$rundownId/renderers'
     | '/control/$rundownId/templates'
+    | '/graphics/p/$'
     | '/control/$rundownId/'
   fileRoutesById: FileRoutesById
 }
@@ -214,6 +238,13 @@ declare module '@tanstack/react-router' {
       path: '/$rundownId'
       fullPath: '/control/$rundownId'
       preLoaderRoute: typeof ControlRundownIdRouteRouteImport
+      parentRoute: typeof ControlRouteRoute
+    }
+    '/control/packages': {
+      id: '/control/packages'
+      path: '/packages'
+      fullPath: '/control/packages'
+      preLoaderRoute: typeof ControlPackagesRouteImport
       parentRoute: typeof ControlRouteRoute
     }
     '/render/$rundownId': {
@@ -265,6 +296,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GraphicsLaborOfLoveLowerThirdRouteRouteImport
       parentRoute: typeof GraphicsRouteRoute
     }
+    '/graphics/p/$': {
+      id: '/graphics/p/$'
+      path: '/p/$'
+      fullPath: '/graphics/p/$'
+      preLoaderRoute: typeof GraphicsPSplatRouteImport
+      parentRoute: typeof GraphicsRouteRoute
+    }
   }
 }
 
@@ -287,11 +325,13 @@ const ControlRundownIdRouteRouteWithChildren =
 
 interface ControlRouteRouteChildren {
   ControlRundownIdRouteRoute: typeof ControlRundownIdRouteRouteWithChildren
+  ControlPackagesRoute: typeof ControlPackagesRoute
   ControlIndexRoute: typeof ControlIndexRoute
 }
 
 const ControlRouteRouteChildren: ControlRouteRouteChildren = {
   ControlRundownIdRouteRoute: ControlRundownIdRouteRouteWithChildren,
+  ControlPackagesRoute: ControlPackagesRoute,
   ControlIndexRoute: ControlIndexRoute,
 }
 
@@ -303,6 +343,7 @@ interface GraphicsRouteRouteChildren {
   GraphicsDrexelBasketballScorebugRouteRoute: typeof GraphicsDrexelBasketballScorebugRouteRoute
   GraphicsLaborOfLoveBracketRouteRoute: typeof GraphicsLaborOfLoveBracketRouteRoute
   GraphicsLaborOfLoveLowerThirdRouteRoute: typeof GraphicsLaborOfLoveLowerThirdRouteRoute
+  GraphicsPSplatRoute: typeof GraphicsPSplatRoute
 }
 
 const GraphicsRouteRouteChildren: GraphicsRouteRouteChildren = {
@@ -311,6 +352,7 @@ const GraphicsRouteRouteChildren: GraphicsRouteRouteChildren = {
   GraphicsLaborOfLoveBracketRouteRoute: GraphicsLaborOfLoveBracketRouteRoute,
   GraphicsLaborOfLoveLowerThirdRouteRoute:
     GraphicsLaborOfLoveLowerThirdRouteRoute,
+  GraphicsPSplatRoute: GraphicsPSplatRoute,
 }
 
 const GraphicsRouteRouteWithChildren = GraphicsRouteRoute._addFileChildren(

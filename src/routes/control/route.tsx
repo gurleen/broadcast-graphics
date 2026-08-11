@@ -32,6 +32,32 @@ function ControlLayout() {
           }
         >
           <Link
+            to="/control"
+            style={{
+              padding: '0 10px',
+              color: 'var(--fg-2)',
+              textDecoration: 'none',
+              fontSize: 11,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Rundowns
+          </Link>
+          <Link
+            to="/control/packages"
+            style={{
+              padding: '0 10px',
+              color: 'var(--fg-2)',
+              textDecoration: 'none',
+              fontSize: 11,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Packages
+          </Link>
+          <Link
             to="/"
             style={{
               padding: '0 10px',
