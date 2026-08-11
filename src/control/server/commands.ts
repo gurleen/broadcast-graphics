@@ -330,8 +330,8 @@ export function applyCommand(command: ControlCommand): CommandResult {
       if (!existing) return err('not_found', `Instance ${instanceId} not found`)
       rundownId = existing.rundownId
 
+      // Take to PGM only — keep cuedInstanceId so PVW stays bound to the cue.
       const instance = store.setInstanceOnScreen(instanceId, true)!
-      const rundown = store.setCuedInstance(rundownId, null)!
 
       const events: ControlEvent[] = [
         {
@@ -340,9 +340,7 @@ export function applyCommand(command: ControlCommand): CommandResult {
           rundownId,
           playout: instance.playout,
           revision: instance.revision,
-          rundown,
         },
-        { type: 'rundown.upserted', rundown },
         { type: 'instance.upserted', instance },
       ]
       publishMany(rundownId, events)

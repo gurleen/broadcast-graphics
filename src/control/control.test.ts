@@ -122,7 +122,8 @@ describe('commands + store', () => {
     const take = applyCommand({ type: 'playout.take', rundownId })
     expect(take.ok).toBe(true)
     expect(store.getInstance(instanceA.instance.id)?.playout.onScreen).toBe(true)
-    expect(store.getRundown(rundownId)?.cuedInstanceId).toBeNull()
+    // Take must not clear the cue — PVW stays bound to the cued instance.
+    expect(store.getRundown(rundownId)?.cuedInstanceId).toBe(instanceA.instance.id)
 
     applyCommand({ type: 'playout.in', instanceId: instanceB.instance.id })
     expect(store.getInstance(instanceB.instance.id)?.playout.onScreen).toBe(true)
@@ -131,6 +132,7 @@ describe('commands + store', () => {
     expect(clear.ok).toBe(true)
     expect(store.getInstance(instanceA.instance.id)?.playout.onScreen).toBe(false)
     expect(store.getInstance(instanceB.instance.id)?.playout.onScreen).toBe(false)
+    expect(store.getRundown(rundownId)?.cuedInstanceId).toBe(instanceA.instance.id)
   })
 
   test('playout.panic clears on-air instances and emits panic event', () => {
@@ -151,8 +153,10 @@ describe('commands + store', () => {
     const upsert = added.events.find((e) => e.type === 'instance.upserted')
     if (upsert?.type !== 'instance.upserted') throw new Error('missing upsert')
 
+    applyCommand({ type: 'playout.cue', instanceId: upsert.instance.id })
     applyCommand({ type: 'playout.in', instanceId: upsert.instance.id })
     expect(store.getInstance(upsert.instance.id)?.playout.onScreen).toBe(true)
+    expect(store.getRundown(rundownId)?.cuedInstanceId).toBe(upsert.instance.id)
 
     const panicResult = applyCommand({ type: 'playout.panic', rundownId })
     expect(panicResult.ok).toBe(true)
@@ -163,6 +167,8 @@ describe('commands + store', () => {
       expect(panicResult.events[0].rundownId).toBe(rundownId)
     }
     expect(store.getInstance(upsert.instance.id)?.playout.onScreen).toBe(false)
+    // Panic is PGM-only — cue / PVW pointer must remain.
+    expect(store.getRundown(rundownId)?.cuedInstanceId).toBe(upsert.instance.id)
   })
 
   test('patchProps bumps revision', () => {
