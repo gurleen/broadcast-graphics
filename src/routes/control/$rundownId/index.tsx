@@ -17,6 +17,7 @@ import type { GraphicInstance } from '#/control/model'
 import { AddInstanceDialog } from './-AddInstanceDialog'
 import { MonitorWell } from './-MonitorWell'
 import { PropertyPanel } from './-PropertyPanel'
+import { PvwMonitor } from './-PvwMonitor'
 
 export const Route = createFileRoute('/control/$rundownId/')({
   ssr: false,
@@ -60,7 +61,7 @@ function PlayoutPage() {
     relabel,
     reorder,
   } = useRundownController(rundownId)
-  const { templates, loading: templatesLoading } = useTemplateCatalog()
+  const { templates, packages, loading: templatesLoading } = useTemplateCatalog()
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
@@ -160,19 +161,6 @@ function PlayoutPage() {
   }))
 
   const selectedIndex = selected ? instances.findIndex((i) => i.id === selected.id) : -1
-
-  // No preview/scale params — GraphicStage auto-fits the iframe viewport (16:9).
-  const pvwSrc = (() => {
-    if (!cued) return null
-    const route = templateById.get(cued.templateId)?.route
-    if (!route) return null
-    const params = new URLSearchParams({
-      rundown: rundownId,
-      instance: cued.id,
-      forceOnScreen: '1',
-    })
-    return `${route}?${params.toString()}`
-  })()
 
   const pgmSrc = `/render/${rundownId}`
 
@@ -431,16 +419,10 @@ function PlayoutPage() {
                 label={cued ? cued.label : 'EMPTY'}
                 style={{ marginBottom: 6, width: '100%' }}
               />
-              <MonitorWell
-                tally={cued ? 'pvw' : 'off'}
-                caption={
-                  cued && missingInstanceIds.has(cued.id)
-                    ? 'TEMPLATE MISSING'
-                    : cued
-                      ? cued.label
-                      : 'NO SOURCE'
-                }
-                src={pvwSrc}
+              <PvwMonitor
+                instance={cued}
+                packages={packages}
+                templateMissing={cued ? missingInstanceIds.has(cued.id) : false}
               />
             </div>
             <div style={{ minWidth: 0 }}>
