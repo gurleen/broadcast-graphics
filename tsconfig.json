@@ -1,6 +1,6 @@
 {
   "include": ["**/*.ts", "**/*.tsx", "**/*.jsx"],
-  "exclude": ["node_modules", "dist", "ui"],
+  "exclude": ["node_modules", "dist", "packages/*/dist", "ui"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",
@@ -11,8 +11,8 @@
       "@gurleen-ui/core": ["./ui/packages/core/dist/index.d.ts"],
       "@gurleen-ui/broadcast": ["./ui/packages/broadcast/dist/index.d.ts"],
       "@gurleen-ui/tokens": ["./ui/packages/tokens/src/index.css"],
-      "@hydra/gfx-runtime": ["./packages/gfx-runtime/src/index.ts"],
-      "@hydra/gfx-runtime/*": ["./packages/gfx-runtime/src/*"]
+      "@hydra-tv/hydra-gfx-runtime": ["./packages/gfx-runtime/src/index.ts"],
+      "@hydra-tv/hydra-gfx-runtime/*": ["./packages/gfx-runtime/src/*"]
     },
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["vite/client"],

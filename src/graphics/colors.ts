@@ -3,5 +3,5 @@ export {
   DefaultShadow,
   DefaultTextShadow,
   defineColors,
-} from '@hydra/gfx-runtime/colors'
-export type { ColorHex, BrandColor } from '@hydra/gfx-runtime/colors'
+} from '@hydra-tv/hydra-gfx-runtime/colors'
+export type { ColorHex, BrandColor } from '@hydra-tv/hydra-gfx-runtime/colors'

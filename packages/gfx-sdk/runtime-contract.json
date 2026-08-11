@@ -2,7 +2,7 @@
   "react": "0.1.0",
   "react/jsx-runtime": "0.1.0",
   "react/jsx-dev-runtime": "0.1.0",
-  "@hydra/gfx-runtime": "0.1.0",
+  "@hydra-tv/hydra-gfx-runtime": "0.1.0",
   "motion/react": "0.1.0",
   "zod": "0.1.0",
   "@gurleen-ui/core": "0.1.0",

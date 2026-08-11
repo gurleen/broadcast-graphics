@@ -1,24 +1,60 @@
 {
-  "name": "@hydra/gfx-sdk",
+  "name": "@hydra-tv/hydra-gfx-sdk",
   "version": "0.1.0",
-  "private": true,
+  "description": "Authoring SDK and hydra-gfx CLI for HYDRA // GFX template packages (.hgfx.js).",
+  "license": "MIT",
   "type": "module",
-  "bin": {
-    "hydra-gfx": "./src/cli.ts"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gurleen/broadcast-graphics.git",
+    "directory": "packages/gfx-sdk"
   },
+  "homepage": "https://github.com/gurleen/broadcast-graphics/tree/main/packages/gfx-sdk",
+  "bugs": {
+    "url": "https://github.com/gurleen/broadcast-graphics/issues"
+  },
+  "bin": {
+    "hydra-gfx": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./config": "./src/config.ts",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js"
+    },
     "./runtime-contract.json": "./runtime-contract.json"
   },
+  "files": [
+    "dist",
+    "runtime-contract.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && bun run scripts/postbuild-cli.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "bun run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  },
   "dependencies": {
-    "@hydra/gfx-runtime": "file:../gfx-runtime"
+    "@hydra-tv/hydra-gfx-runtime": "^0.1.0"
   },
   "peerDependencies": {
     "react": "^19.0.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@types/bun": "latest",
     "@types/react": "^19.2.0",
     "react": "^19.2.0",
     "typescript": "^6.0.2",

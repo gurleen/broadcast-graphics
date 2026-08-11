@@ -1,5 +1,5 @@
 import { FieldRow, Input } from '@gurleen-ui/core'
-import type { TemplateControlsProps } from '@hydra/gfx-runtime/types'
+import type { TemplateControlsProps } from '@hydra-tv/hydra-gfx-runtime/types'
 import type { ExampleLowerThirdProps } from './schema'
 
 export default function ExampleLowerThirdControls({

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { TemplateSchema } from '@hydra/gfx-runtime/types'
+import type { TemplateSchema } from '@hydra-tv/hydra-gfx-runtime/types'
 
 export type ExampleTickerProps = {
   message: string

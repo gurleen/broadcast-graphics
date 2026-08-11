@@ -8,7 +8,7 @@ import * as motion from 'motion/react'
 import * as zod from 'zod'
 import * as gurleenCore from '@gurleen-ui/core'
 import * as gurleenBroadcast from '@gurleen-ui/broadcast'
-import * as gfxRuntime from '@hydra/gfx-runtime'
+import * as gfxRuntime from '@hydra-tv/hydra-gfx-runtime'
 import {
   DEFAULT_SHARED,
   installRuntime,
@@ -34,7 +34,7 @@ export function buildClientSharedModules(): SharedModules {
     zod,
     '@gurleen-ui/core': gurleenCore,
     '@gurleen-ui/broadcast': gurleenBroadcast,
-    '@hydra/gfx-runtime': gfxRuntime,
+    '@hydra-tv/hydra-gfx-runtime': gfxRuntime,
   }
 }
 

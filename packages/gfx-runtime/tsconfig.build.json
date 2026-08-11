@@ -1,16 +1,15 @@
 {
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "jsx": "react-jsx",
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "strict": true,
-    "skipLibCheck": true,
-    "noEmit": true,
     "verbatimModuleSyntax": true,
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "sourceMap": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"]
 }

@@ -6,4 +6,4 @@ export type {
   TemplateRenderProps,
   TemplateControlsProps,
   TemplateDefinition,
-} from '@hydra/gfx-runtime/types'
+} from '@hydra-tv/hydra-gfx-runtime/types'

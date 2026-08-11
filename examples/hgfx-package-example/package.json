@@ -10,8 +10,8 @@
   "dependencies": {
     "@gurleen-ui/core": "file:../../ui/packages/core",
     "@gurleen-ui/tokens": "file:../../ui/packages/tokens",
-    "@hydra/gfx-runtime": "file:../../packages/gfx-runtime",
-    "@hydra/gfx-sdk": "file:../../packages/gfx-sdk",
+    "@hydra-tv/hydra-gfx-runtime": "file:../../packages/gfx-runtime",
+    "@hydra-tv/hydra-gfx-sdk": "file:../../packages/gfx-sdk",
     "gsap": "^3.13.0",
     "motion": "^12.43.0",
     "react": "^19.2.0",

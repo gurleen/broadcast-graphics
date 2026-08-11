@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
-import { HtmlCanvas, GRAPHIC_WIDTH, GRAPHIC_HEIGHT } from '@hydra/gfx-runtime'
-import type { TemplateRenderProps } from '@hydra/gfx-runtime/types'
+import { HtmlCanvas, GRAPHIC_WIDTH, GRAPHIC_HEIGHT } from '@hydra-tv/hydra-gfx-runtime'
+import type { TemplateRenderProps } from '@hydra-tv/hydra-gfx-runtime/types'
 import type { ExampleTickerProps } from './schema'
 
 /**

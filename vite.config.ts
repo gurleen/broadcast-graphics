@@ -13,11 +13,11 @@ const config = defineConfig({
     tsconfigPaths: true,
     alias: [
       {
-        find: /^@hydra\/gfx-runtime\/(.*)$/,
+        find: /^@hydra-tv\/hydra-gfx-runtime\/(.*)$/,
         replacement: path.join(root, 'packages/gfx-runtime/src/$1'),
       },
       {
-        find: '@hydra/gfx-runtime',
+        find: '@hydra-tv/hydra-gfx-runtime',
         replacement: path.join(root, 'packages/gfx-runtime/src/index.ts'),
       },
       {

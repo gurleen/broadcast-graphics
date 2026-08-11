@@ -5,7 +5,7 @@
 import * as React from 'react'
 import * as jsxRuntime from 'react/jsx-runtime'
 import * as zod from 'zod'
-import * as gfxRuntime from '@hydra/gfx-runtime'
+import * as gfxRuntime from '@hydra-tv/hydra-gfx-runtime'
 import { installRuntime, RUNTIME_VERSION, type SharedModules } from './runtime-shared'
 
 function lazyStub(label: string): unknown {
@@ -46,7 +46,7 @@ export function buildServerSharedModules(): SharedModules {
     'react/jsx-runtime': jsxRuntime,
     'react/jsx-dev-runtime': jsxRuntime,
     zod,
-    '@hydra/gfx-runtime': gfxRuntime,
+    '@hydra-tv/hydra-gfx-runtime': gfxRuntime,
     // Browser / UI modules — never evaluated for schema imports when components are lazy.
     'motion/react': lazyStub('motion/react'),
     '@gurleen-ui/core': lazyStub('@gurleen-ui/core'),

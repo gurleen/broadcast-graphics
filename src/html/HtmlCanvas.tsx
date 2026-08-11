@@ -1,1 +1,1 @@
-export { HtmlCanvas } from '@hydra/gfx-runtime/html/HtmlCanvas'
+export { HtmlCanvas } from '@hydra-tv/hydra-gfx-runtime/html/HtmlCanvas'

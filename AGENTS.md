@@ -30,10 +30,10 @@ Product brand string: `HYDRA // GFX` (document title, NavBar brand, Tauri `produ
 | `src/control/` | Control plane: Hono app, protocol, SQLite server, React client hooks |
 | `src/templates/` | Dual template registries (`schemas.ts` server-safe, `registry.tsx` / `registry-static.ts` client) |
 | `src/packages/` | Dynamic `.hgfx.js` package runtime registry + browser loader |
-| `packages/gfx-runtime` | Shared template engine (`HtmlCanvas`, colors, types) — also used by external packages |
-| `packages/gfx-sdk` | `definePackage` / `hydra-gfx build` CLI for compiling package artifacts |
+| `packages/gfx-runtime` | `@hydra-tv/hydra-gfx-runtime` — shared template engine (`HtmlCanvas`, colors, types) |
+| `packages/gfx-sdk` | `@hydra-tv/hydra-gfx-sdk` — `definePackage` / `hydra-gfx build` CLI (npm-publishable) |
 | `examples/hgfx-package-example` | Sample external package (motion + gsap templates) |
-| `src/html/` | Re-exports from `@hydra/gfx-runtime` (compat shims) |
+| `src/html/` | Re-exports from `@hydra-tv/hydra-gfx-runtime` (compat shims) |
 | `server/app.ts` | Re-export of control Hono app for Bun servers |
 | `scripts/` | Desktop prepare / sidecar / SPA index writer |
 | `src-tauri/` | Tauri shell; navigates to `/` after sidecar READY |
@@ -84,7 +84,7 @@ Copy an existing folder (`labor-of-love/lower-third` or `drexel/basketball-score
 
 | Engine | Use when |
 |--------|----------|
-| `@hydra/gfx-runtime` / `src/html` (`HtmlCanvas`) | Default — DOM + Motion; all current live templates |
+| `@hydra-tv/hydra-gfx-runtime` / `src/html` (`HtmlCanvas`) | Default — DOM + Motion; all current live templates |
 | `src/graphics` (`GraphicCanvas`) | R3F / Yoga WebGL when GPU/3D layout is required |
 
 Shared frame size: `GRAPHIC_WIDTH` / `GRAPHIC_HEIGHT` in `src/graphics/constants.ts` (1920×1080).

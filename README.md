@@ -123,8 +123,19 @@ bun run start          # serve.ts — Bun.serve + control plane
 | `bun run start` | Serve built app + control API |
 | `bun test` | Control-plane tests (`CONTROLLER_DB=:memory:`) |
 | `bun run build:ui` | Install/build `@gurleen-ui` submodule |
+| `bun run build:packages` | Build `@hydra-tv/hydra-gfx-runtime` + `@hydra-tv/hydra-gfx-sdk` |
+| `bun run publish:packages` | Build then `npm publish` both packages (runtime first) |
 | `bun run prepare:desktop` | Client shell + sidecar binary |
 | `bun run tauri:dev` / `tauri:build` | Desktop app |
+
+## Template SDK (npm)
+
+External graphic packages depend on:
+
+- [`@hydra-tv/hydra-gfx-runtime`](./packages/gfx-runtime) — `HtmlCanvas`, layout primitives, types
+- [`@hydra-tv/hydra-gfx-sdk`](./packages/gfx-sdk) — `definePackage` + `hydra-gfx` CLI (Bun required)
+
+See [docs/template-packages.md](./docs/template-packages.md). To publish from this repo after `npm login`: `bun run publish:packages`.
 
 ## Known follow-ups
 

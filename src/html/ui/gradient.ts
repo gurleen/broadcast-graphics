@@ -1,1 +1,1 @@
-export * from '@hydra/gfx-runtime/html/ui/gradient'
+export * from '@hydra-tv/hydra-gfx-runtime/html/ui/gradient'

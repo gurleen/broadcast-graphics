@@ -1,1 +1,1 @@
-export * from '@hydra/gfx-runtime/html/ui/Flex'
+export * from '@hydra-tv/hydra-gfx-runtime/html/ui/Flex'

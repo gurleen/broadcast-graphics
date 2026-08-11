@@ -7,7 +7,7 @@ const config = {
     'react',
     'react/jsx-runtime',
     'react/jsx-dev-runtime',
-    '@hydra/gfx-runtime',
+    '@hydra-tv/hydra-gfx-runtime',
     'motion/react',
     'zod',
     '@gurleen-ui/core',

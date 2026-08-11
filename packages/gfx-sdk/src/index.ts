@@ -5,7 +5,7 @@ import type {
   TemplateControlsProps,
   TemplateRenderProps,
   TemplateTransition,
-} from '@hydra/gfx-runtime/types'
+} from '@hydra-tv/hydra-gfx-runtime/types'
 
 export const FORMAT_VERSION = 1 as const
 

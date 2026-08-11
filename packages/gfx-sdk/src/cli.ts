@@ -30,7 +30,7 @@ async function loadConfig(configPath: string): Promise<HydraConfig> {
 async function loadContract(): Promise<Record<string, string>> {
   const candidates = [
     path.resolve(import.meta.dir, '../runtime-contract.json'),
-    path.resolve(ROOT, 'node_modules/@hydra/gfx-sdk/runtime-contract.json'),
+    path.resolve(ROOT, 'node_modules/@hydra-tv/hydra-gfx-sdk/runtime-contract.json'),
   ]
   for (const c of candidates) {
     try {
@@ -44,7 +44,7 @@ async function loadContract(): Promise<Record<string, string>> {
     react: '0.1.0',
     'react/jsx-runtime': '0.1.0',
     'react/jsx-dev-runtime': '0.1.0',
-    '@hydra/gfx-runtime': '0.1.0',
+    '@hydra-tv/hydra-gfx-runtime': '0.1.0',
     'motion/react': '0.1.0',
     zod: '0.1.0',
     '@gurleen-ui/core': '0.1.0',
@@ -150,7 +150,8 @@ async function buildOnce(opts: {
       '.ttf': 'dataurl',
       '.otf': 'dataurl',
       '.css': 'text',
-    },
+      // Bun's Loader typings lag behind supported asset loaders used at build time.
+    } as unknown as Bun.BuildConfig['loader'],
   })
 
   if (!result.success) {

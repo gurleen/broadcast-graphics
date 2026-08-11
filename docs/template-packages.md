@@ -1,6 +1,6 @@
 # Template packages
 
-HYDRA // GFX can load **compiled template packages** (`.hgfx.js`) at runtime. Each package is authored in its own repo (or folder), built with the `@hydra/gfx-sdk` CLI, and installed by dropping the artifact into `data/packages/` or uploading it on **Control → Packages**.
+HYDRA // GFX can load **compiled template packages** (`.hgfx.js`) at runtime. Each package is authored in its own repo (or folder), built with the `@hydra-tv/hydra-gfx-sdk` CLI, and installed by dropping the artifact into `data/packages/` or uploading it on **Control → Packages**.
 
 Built-in templates (`labor-of-love-*`, `drexel-basketball-scorebug`) remain statically compiled and always available.
 
@@ -32,7 +32,7 @@ export default {
     'react',
     'react/jsx-runtime',
     'react/jsx-dev-runtime',
-    '@hydra/gfx-runtime',
+    '@hydra-tv/hydra-gfx-runtime',
     'motion/react',   // optional — remove to bundle your own copy
     'zod',
     '@gurleen-ui/core',
@@ -41,7 +41,7 @@ export default {
 }
 ```
 
-- **Mandatory shared:** `react`, `react/jsx-runtime`, `react/jsx-dev-runtime`, `@hydra/gfx-runtime`
+- **Mandatory shared:** `react`, `react/jsx-runtime`, `react/jsx-dev-runtime`, `@hydra-tv/hydra-gfx-runtime`
 - **Default shared (removable):** `motion/react`, `zod`, `@gurleen-ui/core`, `@gurleen-ui/broadcast`
 - **Everything else is bundled** (e.g. `gsap`) — see `examples/hgfx-package-example` ticker template
 
@@ -49,11 +49,11 @@ export default {
 
 ```bash
 # In your package repo
-bun add @hydra/gfx-sdk @hydra/gfx-runtime react zod motion
+bun add @hydra-tv/hydra-gfx-sdk @hydra-tv/hydra-gfx-runtime react zod motion
 # optional: @gurleen-ui/core gsap …
 
 # src/index.ts
-import { definePackage, defineTemplate } from '@hydra/gfx-sdk'
+import { definePackage, defineTemplate } from '@hydra-tv/hydra-gfx-sdk'
 import { mySchema } from './templates/foo/schema'
 
 export default definePackage({

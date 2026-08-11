@@ -1,4 +1,4 @@
-import { definePackage, defineTemplate } from '@hydra/gfx-sdk'
+import { definePackage, defineTemplate } from '@hydra-tv/hydra-gfx-sdk'
 import { exampleLowerThirdTemplateSchema } from './templates/lower-third/schema'
 import { exampleTickerTemplateSchema } from './templates/ticker/schema'
 

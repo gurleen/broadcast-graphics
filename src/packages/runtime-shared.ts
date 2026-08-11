@@ -26,7 +26,7 @@ export const MANDATORY_SHARED = [
   'react',
   'react/jsx-runtime',
   'react/jsx-dev-runtime',
-  '@hydra/gfx-runtime',
+  '@hydra-tv/hydra-gfx-runtime',
 ] as const
 
 export const DEFAULT_SHARED = [

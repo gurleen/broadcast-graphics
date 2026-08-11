@@ -1,1 +1,1 @@
-export * from '@hydra/gfx-runtime/html/ui/shadow'
+export * from '@hydra-tv/hydra-gfx-runtime/html/ui/shadow'
