@@ -14,7 +14,12 @@
     "prebuild": "bun run build:ui",
     "build:ui": "npm --prefix ui ci && npm --prefix ui run build",
     "start": "bun run serve.ts",
-    "preview": "vite preview"
+    "start:desktop": "bun run serve-desktop.ts",
+    "preview": "vite preview",
+    "build:sidecar": "bun run scripts/build-sidecar.ts",
+    "prepare:desktop": "bun run scripts/prepare-desktop.ts",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "@gurleen-ui/broadcast": "file:ui/packages/broadcast",
@@ -27,6 +32,7 @@
     "@tanstack/react-router": "latest",
     "@tanstack/react-router-devtools": "latest",
     "@tanstack/react-start": "latest",
+    "@tauri-apps/plugin-shell": "~2",
     "clsx": "^2.1.1",
     "hono": "^4.13.1",
     "motion": "^12.43.0",
@@ -40,6 +46,7 @@
   "devDependencies": {
     "@tanstack/devtools-vite": "latest",
     "@tanstack/router-cli": "^1.132.0",
+    "@tauri-apps/cli": "^2.11.4",
     "@types/node": "^22.10.2",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

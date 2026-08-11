@@ -18,11 +18,18 @@ const vite = await createViteServer({
     host: '127.0.0.1',
     port: VITE_PORT,
     strictPort: true,
+    // If someone opens Vite's port directly, forward control-plane REST/WS to Bun.
+    proxy: {
+      '/api/control': {
+        target: `http://127.0.0.1:${PUBLIC_PORT}`,
+        changeOrigin: true,
+        ws: true,
+      },
+    },
   },
 })
 
 await vite.listen()
-vite.printUrls()
 
 type ViteProxyConn = {
   kind: 'vite-proxy'
@@ -113,5 +120,5 @@ Bun.serve<WsData, object>({
   },
 })
 
-console.log(`[broadcast-graphics] public http://localhost:${PUBLIC_PORT} → vite ${VITE_ORIGIN}`)
-console.log(`[broadcast-graphics] control plane at /api/control`)
+console.log(`[broadcast-graphics] open http://localhost:${PUBLIC_PORT}`)
+console.log(`[broadcast-graphics] control plane at /api/control (vite :${VITE_PORT} is internal)`)
