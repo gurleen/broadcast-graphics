@@ -1,6 +1,13 @@
-import type { CSSProperties } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 import { Button, FieldRow, Input, Select } from '@gurleen-ui/core'
 import type { TemplateControlsProps } from '#/templates/types'
+import {
+  numericClockValue,
+  registerDrexelClockSink,
+  setDrexelClockRunning,
+  setDrexelClockValues,
+  useDrexelClock,
+} from '../store'
 import {
   basketballScorebugDefaultProps,
   type BasketballScorebugProps,
@@ -25,8 +32,7 @@ const readout: CSSProperties = {
 }
 
 function numericScore(score: number | string): number {
-  const value = typeof score === 'number' ? score : Number.parseInt(score, 10)
-  return Number.isFinite(value) ? value : 0
+  return numericClockValue(score)
 }
 
 function ScoreStepper({
@@ -54,6 +60,25 @@ export function BasketballScorebugControls({
   patch,
   replace,
 }: TemplateControlsProps<BasketballScorebugProps>) {
+  const clockState = useDrexelClock()
+  const patchRef = useRef(patch)
+  patchRef.current = patch
+
+  // Register patch sink so the singleton ticker pushes into instance props (PGM/PVW via WS).
+  useEffect(() => {
+    return registerDrexelClockSink((tick) => {
+      patchRef.current({ clock: tick.clock, shotClock: tick.shotClock })
+    })
+  }, [])
+
+  // Keep store aligned with props when the operator edits while stopped.
+  useEffect(() => {
+    if (clockState.running) return
+    const shot = numericScore(props.shotClock)
+    if (props.clock === clockState.clock && shot === clockState.shotClock) return
+    setDrexelClockValues(props.clock, shot)
+  }, [props.clock, props.shotClock, clockState.running, clockState.clock, clockState.shotClock])
+
   const bumpScore = (side: 'home' | 'away', delta: number) => {
     replace({
       ...props,
@@ -65,10 +90,35 @@ export function BasketballScorebugControls({
   }
 
   const bumpShotClock = (delta: number) => {
-    patch({
-      shotClock: Math.max(0, numericScore(props.shotClock) + delta),
-    })
+    const next = Math.max(0, numericScore(props.shotClock) + delta)
+    setDrexelClockValues(clockState.clock, next)
+    patch({ shotClock: next })
   }
+
+  const startClock = () => {
+    setDrexelClockValues(props.clock, props.shotClock)
+    setDrexelClockRunning(true)
+  }
+
+  const stopClock = () => {
+    setDrexelClockRunning(false)
+  }
+
+  const resetClock = () => {
+    setDrexelClockRunning(false)
+    const clock = basketballScorebugDefaultProps.clock
+    setDrexelClockValues(clock, clockState.shotClock)
+    patch({ clock })
+  }
+
+  const resetShotClock = () => {
+    const shotClock = numericScore(basketballScorebugDefaultProps.shotClock)
+    setDrexelClockValues(clockState.clock, shotClock)
+    patch({ shotClock })
+  }
+
+  const displayClock = clockState.running ? clockState.clock : props.clock
+  const displayShot = clockState.running ? clockState.shotClock : props.shotClock
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -117,27 +167,30 @@ export function BasketballScorebugControls({
       <FieldRow label="Clock">
         <div style={rowCluster}>
           <Input
-            value={props.clock}
+            value={displayClock}
             width={80}
-            onChange={(value) => patch({ clock: value })}
+            onChange={(value) => {
+              setDrexelClockRunning(false)
+              setDrexelClockValues(value, clockState.shotClock)
+              patch({ clock: value })
+            }}
           />
           <Button
-            label="Reset"
+            label={clockState.running ? 'Stop' : 'Start'}
             size="sm"
-            onClick={() => patch({ clock: basketballScorebugDefaultProps.clock })}
+            variant={clockState.running ? 'armed' : 'default'}
+            active={clockState.running}
+            onClick={() => (clockState.running ? stopClock() : startClock())}
           />
+          <Button label="Reset" size="sm" onClick={resetClock} />
         </div>
       </FieldRow>
       <FieldRow label="Shot">
         <div style={rowCluster}>
           <Button label="−" size="sm" onClick={() => bumpShotClock(-1)} />
-          <span style={readout}>{props.shotClock}</span>
+          <span style={readout}>{displayShot}</span>
           <Button label="+" size="sm" onClick={() => bumpShotClock(1)} />
-          <Button
-            label="Reset"
-            size="sm"
-            onClick={() => patch({ shotClock: basketballScorebugDefaultProps.shotClock })}
-          />
+          <Button label="Reset" size="sm" onClick={resetShotClock} />
         </div>
       </FieldRow>
     </div>

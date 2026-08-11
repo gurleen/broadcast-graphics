@@ -4,12 +4,13 @@ import {
   Badge,
   Button,
   DataGrid,
+  Dialog,
   LogConsole,
   Panel,
   useToast,
 } from '@gurleen-ui/core'
 import type { DataGridRow, LogLine as UiLogLine } from '@gurleen-ui/core'
-import { BusButton, Tally } from '@gurleen-ui/broadcast'
+import { Tally } from '@gurleen-ui/broadcast'
 import { useRundownController, useTemplateCatalog } from '#/control/client'
 import type { GraphicInstance } from '#/control/model'
 import { AddInstanceDialog } from './-AddInstanceDialog'
@@ -38,12 +39,6 @@ function mapLogLevel(kind: string): UiLogLine['level'] {
   }
 }
 
-/** Short bus-key caption that fits the default BusButton width. */
-function busLabel(label: string, max = 10): string {
-  if (label.length <= max) return label
-  return `${label.slice(0, max - 1)}…`
-}
-
 function PlayoutPage() {
   const { rundownId } = Route.useParams()
   const toast = useToast()
@@ -54,7 +49,6 @@ function PlayoutPage() {
     log,
     cue,
     take,
-    toggle,
     clearAll,
     patchProps,
     replaceProps,
@@ -66,6 +60,7 @@ function PlayoutPage() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [removeOpen, setRemoveOpen] = useState(false)
 
   // Keep selection valid as instances change.
   const selected = useMemo(() => {
@@ -185,10 +180,35 @@ function PlayoutPage() {
           title="RUNDOWN"
           meta={rundown?.name ?? rundownId}
           padded={false}
-          style={{ width: 360, flexShrink: 0, display: 'flex', flexDirection: 'column' }}
+          style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column', minHeight: 0 }}
+          bodyStyle={{ display: 'flex', flexDirection: 'column', minHeight: 0, padding: 0 }}
           actions={
             <div style={{ display: 'flex', gap: 4 }}>
               <Button label="+" size="sm" variant="accent" onClick={() => setAddOpen(true)} />
+              <Button
+                size="sm"
+                disabled={!selected || status !== 'open'}
+                title="Remove selected instance"
+                onClick={() => setRemoveOpen(true)}
+                style={{ padding: '0 5px', minWidth: 20 }}
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  aria-hidden
+                  style={{ display: 'block' }}
+                >
+                  <path
+                    d="M3.5 4.5h9M6.5 4.5V3.25a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 .75.75V4.5m1.5 0v8.25a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V4.5m2 2.5v4.5m2-4.5v4.5"
+                    stroke="currentColor"
+                    strokeWidth="1.25"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </Button>
               <Button
                 label="↑"
                 size="sm"
@@ -204,63 +224,34 @@ function PlayoutPage() {
             </div>
           }
         >
-          <DataGrid
-            columns={[
-              { key: 'index', label: '#', width: '36px', dim: true },
-              { key: 'label', label: 'Name' },
-              { key: 'template', label: 'Type', width: '110px', dim: true },
-              { key: 'phase', label: 'State', width: '48px', align: 'right', dim: true },
-            ]}
-            rows={rows}
-            selected={selectedIndex >= 0 ? selectedIndex : undefined}
-            height="100%"
-            onSelect={(_, row) => {
-              const inst = row._instance as GraphicInstance
-              setSelectedId(inst.id)
-              void run('Cue', () => cue(inst.id))
-            }}
-          />
-        </Panel>
-
-        <Panel title="PREVIEW / PROGRAM" style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <Tally
-                state={cued ? 'pvw' : 'off'}
-                sublabel="PVW"
-                label={cued ? cued.label : 'EMPTY'}
-                style={{ marginBottom: 6, width: '100%' }}
-              />
-              <MonitorWell
-                tally={cued ? 'pvw' : 'off'}
-                caption={cued ? cued.label : 'NO SOURCE'}
-                src={pvwSrc}
-              />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <Tally
-                state={showPgmFeed ? 'pgm' : 'off'}
-                sublabel="PGM"
-                label={pgmLabel ?? 'EMPTY'}
-                style={{ marginBottom: 6, width: '100%' }}
-              />
-              <MonitorWell
-                tally={showPgmFeed ? 'pgm' : 'off'}
-                caption={pgmLabel ?? 'NO SOURCE'}
-                src={showPgmFeed ? pgmSrc : null}
-                transparent
-              />
-            </div>
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <DataGrid
+              columns={[
+                { key: 'index', label: '#', width: '36px', dim: true },
+                { key: 'label', label: 'Name' },
+                { key: 'template', label: 'Type', width: '110px', dim: true },
+                { key: 'phase', label: 'State', width: '48px', align: 'right', dim: true },
+              ]}
+              rows={rows}
+              selected={selectedIndex >= 0 ? selectedIndex : undefined}
+              height="100%"
+              onSelect={(_, row) => {
+                const inst = row._instance as GraphicInstance
+                setSelectedId(inst.id)
+                void run('Cue', () => cue(inst.id))
+              }}
+            />
           </div>
-
           <div
             style={{
+              flexShrink: 0,
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
               gap: 8,
-              marginTop: 12,
-              flexWrap: 'wrap',
+              padding: 8,
+              borderTop: '1px solid var(--line-1)',
+              background: 'var(--grad-panel)',
             }}
           >
             {(() => {
@@ -271,9 +262,7 @@ function PlayoutPage() {
                   size="xl"
                   variant={programLive ? 'take' : 'default'}
                   active={programLive}
-                  disabled={
-                    status !== 'open' || (!programLive && !cued)
-                  }
+                  disabled={status !== 'open' || (!programLive && !cued)}
                   title={
                     programLive
                       ? 'Take program graphics off air'
@@ -311,40 +300,42 @@ function PlayoutPage() {
               title="Clear all graphics from program"
               onClick={() => void run('Blank', () => clearAll())}
             />
-            <Button
-              label="REMOVE"
-              size="lg"
-              disabled={!selected || status !== 'open'}
-              title="Remove selected instance from rundown"
-              onClick={() => {
-                if (!selected) return
-                void run('Remove', () => removeInstance(selected.id)).then((ok) => {
-                  if (ok) setSelectedId(null)
-                })
-              }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-            {instances.map((inst) => (
-              <span key={inst.id} title={inst.label}>
-                <BusButton
-                  label={busLabel(inst.label)}
-                  index={String(inst.sortOrder + 1).padStart(2, '0')}
-                  state={inst.playout.onScreen ? 'pgm' : inst.playout.cued ? 'pvw' : 'off'}
-                  width={88}
-                  style={{ overflow: 'hidden' }}
-                  onClick={() => {
-                    setSelectedId(inst.id)
-                    void run('Toggle', () => toggle(inst.id))
-                  }}
-                />
-              </span>
-            ))}
           </div>
         </Panel>
 
-        <Panel title="TEMPLATE PROPERTIES" style={{ width: 280, flexShrink: 0, minWidth: 0 }} bodyStyle={{ overflow: 'auto', minWidth: 0 }}>
+        <Panel title="PREVIEW / PROGRAM" style={{ width: 360, flexShrink: 0, minWidth: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ minWidth: 0 }}>
+              <Tally
+                state={cued ? 'pvw' : 'off'}
+                sublabel="PVW"
+                label={cued ? cued.label : 'EMPTY'}
+                style={{ marginBottom: 6, width: '100%' }}
+              />
+              <MonitorWell
+                tally={cued ? 'pvw' : 'off'}
+                caption={cued ? cued.label : 'NO SOURCE'}
+                src={pvwSrc}
+              />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <Tally
+                state={showPgmFeed ? 'pgm' : 'off'}
+                sublabel="PGM"
+                label={pgmLabel ?? 'EMPTY'}
+                style={{ marginBottom: 6, width: '100%' }}
+              />
+              <MonitorWell
+                tally={showPgmFeed ? 'pgm' : 'off'}
+                caption={pgmLabel ?? 'NO SOURCE'}
+                src={showPgmFeed ? pgmSrc : null}
+                transparent
+              />
+            </div>
+          </div>
+        </Panel>
+
+        <Panel title="TEMPLATE PROPERTIES" style={{ flex: 1, minWidth: 280 }} bodyStyle={{ overflow: 'auto', minWidth: 0 }}>
           <PropertyPanel
             instance={selected}
             template={selected ? templateById.get(selected.templateId) : undefined}
@@ -394,6 +385,29 @@ function PlayoutPage() {
           const ok = await run('Add instance', () => addInstance(input))
           if (ok) toast.show({ level: 'ok', message: 'Instance added', detail: input.templateId })
           return ok
+        }}
+      />
+
+      <Dialog
+        open={removeOpen}
+        title="REMOVE INSTANCE"
+        message="Remove this graphic from the rundown?"
+        detail={selected ? selected.label : undefined}
+        confirmLabel="REMOVE"
+        confirmVariant="take"
+        cancelLabel="CANCEL"
+        onCancel={() => setRemoveOpen(false)}
+        onConfirm={() => {
+          if (!selected) {
+            setRemoveOpen(false)
+            return
+          }
+          void run('Remove', () => removeInstance(selected.id)).then((ok) => {
+            if (ok) {
+              setSelectedId(null)
+              setRemoveOpen(false)
+            }
+          })
         }}
       />
     </div>
