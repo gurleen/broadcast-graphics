@@ -18,6 +18,7 @@
     "preview": "vite preview",
     "build:sidecar": "bun run scripts/build-sidecar.ts",
     "prepare:desktop": "bun run scripts/prepare-desktop.ts",
+    "build:example-pkg": "bun run --cwd examples/hgfx-package-example build",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
   },
@@ -25,6 +26,8 @@
     "@gurleen-ui/broadcast": "file:ui/packages/broadcast",
     "@gurleen-ui/core": "file:ui/packages/core",
     "@gurleen-ui/tokens": "file:ui/packages/tokens",
+    "@hydra/gfx-runtime": "file:packages/gfx-runtime",
+    "@hydra/gfx-sdk": "file:packages/gfx-sdk",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.7.0",
     "@tailwindcss/vite": "^4.1.18",

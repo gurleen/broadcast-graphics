@@ -133,6 +133,10 @@ export function listSessionsForRundown(rundownId: string): LiveSession[] {
   )
 }
 
+export function listAllSessions(): LiveSession[] {
+  return [...getState().byId.values()]
+}
+
 export function broadcastToRundown(rundownId: string, payload: string): void {
   for (const session of listSessionsForRundown(rundownId)) {
     try {

@@ -142,6 +142,13 @@ function applyEvent(state: RundownStoreState, seq: number, event: ControlEvent):
     case 'error':
       next.error = event.error
       break
+    case 'packages.changed':
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('hydra:packages-changed', { detail: { at: event.at } }),
+        )
+      }
+      break
   }
 
   if (next.rundown) {

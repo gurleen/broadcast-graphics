@@ -2,12 +2,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { Checkbox, FieldRow, Input, Select, Slider, Switch } from '@gurleen-ui/core'
 import type { GraphicInstance } from '#/control/model'
 import type { TemplatePublicMeta } from '#/templates/schemas'
-import { getTemplateDefinition } from '#/templates/registry'
+import { resolveTemplateDefinition } from '#/templates/registry'
+import { useTemplateCatalog } from '#/control/client'
+import { useTemplateComponents } from '#/packages/hooks'
 import type { FieldDef, FieldDefType } from '#/templates/types'
 
 type PropertyPanelProps = {
   instance: GraphicInstance | null
   template: TemplatePublicMeta | undefined
+  /** True when the catalog has loaded and this instance's templateId is absent. */
+  templateMissing?: boolean
   onPatch: (patch: Record<string, unknown>) => void
   onReplace: (props: Record<string, unknown>) => void
 }
@@ -134,9 +138,17 @@ function MetaSection({ instance }: { instance: GraphicInstance }) {
   )
 }
 
-export function PropertyPanel({ instance, template, onPatch, onReplace }: PropertyPanelProps) {
+export function PropertyPanel({
+  instance,
+  template,
+  templateMissing = false,
+  onPatch,
+  onReplace,
+}: PropertyPanelProps) {
+  const { packages } = useTemplateCatalog()
+  useTemplateComponents(instance ? [instance.templateId] : [], packages)
   const Controls = instance
-    ? getTemplateDefinition(instance.templateId)?.Controls
+    ? resolveTemplateDefinition(instance.templateId)?.Controls
     : undefined
 
   // Local draft so typing isn't reset when parent re-renders with stale server props.
@@ -233,6 +245,38 @@ export function PropertyPanel({ instance, template, onPatch, onReplace }: Proper
       <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>
         Select a rundown item to edit its template properties.
       </span>
+    )
+  }
+
+  if (!template) {
+    if (!templateMissing) {
+      return (
+        <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>Loading template catalog…</span>
+      )
+    }
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
+        <div
+          role="alert"
+          style={{
+            padding: '8px 10px',
+            border: '1px solid var(--warn)',
+            background: 'var(--warn-bg, color-mix(in srgb, var(--warn) 12%, transparent))',
+            fontSize: 11,
+            lineHeight: 1.4,
+          }}
+        >
+          <div style={{ fontWeight: 700, marginBottom: 4, letterSpacing: '0.06em' }}>
+            TEMPLATE NOT FOUND
+          </div>
+          <div style={{ color: 'var(--fg-2)' }}>
+            This item uses <code>{instance.templateId}</code>, which is not in the current
+            catalog. Reinstall the package that provides it, or remove this item from the
+            rundown.
+          </div>
+        </div>
+        <MetaSection instance={instance} />
+      </div>
     )
   }
 

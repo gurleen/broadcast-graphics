@@ -111,6 +111,10 @@ export const ControlEvent = z.discriminatedUnion('type', [
     sessionId: z.string(),
     rundownId: z.string(),
   }),
+  z.object({
+    type: z.literal('packages.changed'),
+    at: z.number(),
+  }),
   z.object({ type: z.literal('error'), error: ProtocolError }),
 ])
 export type ControlEvent = z.infer<typeof ControlEvent>

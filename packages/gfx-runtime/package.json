@@ -1,0 +1,27 @@
+{
+  "name": "@hydra/gfx-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./html": "./src/html/index.ts",
+    "./html/HtmlCanvas": "./src/html/HtmlCanvas.tsx",
+    "./html/LowerThird": "./src/html/LowerThird.tsx",
+    "./html/ui": "./src/html/ui/index.ts",
+    "./html/ui/*": "./src/html/ui/*",
+    "./types": "./src/types.ts",
+    "./colors": "./src/colors.ts",
+    "./constants": "./src/constants.ts"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "react": "^19.2.0",
+    "typescript": "^6.0.2",
+    "zod": "^4.4.3"
+  }
+}
