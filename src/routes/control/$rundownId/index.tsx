@@ -163,14 +163,19 @@ function PlayoutPage() {
     return result.ok
   }
 
+  const reorderByIndex = async (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return
+    const ordered = instances.map((i) => i.id)
+    const [item] = ordered.splice(fromIndex, 1)
+    ordered.splice(toIndex, 0, item!)
+    await run('Reorder', () => reorder(ordered))
+  }
+
   const moveSelected = async (dir: -1 | 1) => {
     if (!selected || selectedIndex < 0) return
     const nextIndex = selectedIndex + dir
     if (nextIndex < 0 || nextIndex >= instances.length) return
-    const ordered = instances.map((i) => i.id)
-    const [item] = ordered.splice(selectedIndex, 1)
-    ordered.splice(nextIndex, 0, item!)
-    await run('Reorder', () => reorder(ordered))
+    await reorderByIndex(selectedIndex, nextIndex)
   }
 
   return (
@@ -235,6 +240,8 @@ function PlayoutPage() {
               rows={rows}
               selected={selectedIndex >= 0 ? selectedIndex : undefined}
               height="100%"
+              reorderable
+              onReorder={(from, to) => void reorderByIndex(from, to)}
               onSelect={(_, row) => {
                 const inst = row._instance as GraphicInstance
                 setSelectedId(inst.id)
