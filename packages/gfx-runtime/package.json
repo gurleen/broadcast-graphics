@@ -1,6 +1,6 @@
 {
   "name": "@hydra-tv/hydra-gfx-runtime",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Shared template runtime for HYDRA // GFX (HtmlCanvas, layout primitives, template types).",
   "license": "MIT",
   "type": "module",
