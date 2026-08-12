@@ -9,8 +9,10 @@ import { recomputeRundownProjection } from './projector'
 import {
   restartProvidersIfNeeded,
   startAutostartProviders,
+  startProvider,
   stopAllProvidersForPackage,
   stopAllProvidersForRundown,
+  stopProvider,
 } from './providers'
 
 export type CommandResult =
@@ -632,6 +634,29 @@ export function applyCommand(command: ControlCommand): CommandResult {
       publishMany(command.rundownId, events)
       recomputeRundownProjection(command.rundownId)
       return { ok: true, events, rundownId: command.rundownId }
+    }
+
+    case 'provider.start': {
+      const attachment = store.getPackageAttachment(command.rundownId, command.packageId)
+      if (!attachment?.attached) {
+        return err('not_attached', `Package ${command.packageId} is not attached to this rundown`)
+      }
+      const pkg = getLoadedPackage(command.packageId)
+      const def = pkg?.providers?.find((p) => p.id === command.providerId)
+      if (!def) {
+        return err('unknown_provider', `Provider ${command.providerId} not found on ${command.packageId}`)
+      }
+      startProvider(command.rundownId, command.packageId, command.providerId)
+      return { ok: true, events: [], rundownId: command.rundownId }
+    }
+
+    case 'provider.stop': {
+      const attachment = store.getPackageAttachment(command.rundownId, command.packageId)
+      if (!attachment?.attached) {
+        return err('not_attached', `Package ${command.packageId} is not attached to this rundown`)
+      }
+      stopProvider(command.rundownId, command.packageId, command.providerId)
+      return { ok: true, events: [], rundownId: command.rundownId }
     }
 
     default: {

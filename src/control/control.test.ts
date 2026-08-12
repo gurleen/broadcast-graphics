@@ -592,12 +592,68 @@ describe('providers', () => {
 
     expect(store.getRundownDataValue(rundownId, TEST_PACKAGE_ID, 'game')).toEqual({ score: 42 })
 
+    const running = buildSnapshot(rundownId)?.providers.find((p) => p.providerId === 'ticker')
+    expect(running?.state).toBe('ok')
+
     const detached = applyCommand({
       type: 'rundown.detachPackage',
       rundownId,
       packageId: TEST_PACKAGE_ID,
     })
     expect(detached.ok).toBe(true)
+  })
+
+  test('provider.start / provider.stop control a non-autostart feed', async () => {
+    registerTestPackage(
+      testPackage({
+        providers: [
+          {
+            id: 'manual',
+            name: 'Manual',
+            publishes: ['game'],
+            autostart: false,
+            start: (ctx) => {
+              ctx.publish('game', { score: 7 })
+              return () => {}
+            },
+          },
+        ],
+      }),
+    )
+
+    const created = applyCommand({ type: 'rundown.create', name: 'Providers Manual' })
+    if (!created.ok) throw new Error('create failed')
+    const rundownId = created.rundownId!
+
+    applyCommand({ type: 'rundown.attachPackage', rundownId, packageId: TEST_PACKAGE_ID })
+    await Promise.resolve()
+    expect(store.getRundownDataValue(rundownId, TEST_PACKAGE_ID, 'game')).toBeUndefined()
+
+    const started = applyCommand({
+      type: 'provider.start',
+      rundownId,
+      packageId: TEST_PACKAGE_ID,
+      providerId: 'manual',
+    })
+    expect(started.ok).toBe(true)
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(store.getRundownDataValue(rundownId, TEST_PACKAGE_ID, 'game')).toEqual({ score: 7 })
+    expect(buildSnapshot(rundownId)?.providers.find((p) => p.providerId === 'manual')?.state).toBe(
+      'ok',
+    )
+
+    const stopped = applyCommand({
+      type: 'provider.stop',
+      rundownId,
+      packageId: TEST_PACKAGE_ID,
+      providerId: 'manual',
+    })
+    expect(stopped.ok).toBe(true)
+    expect(
+      buildSnapshot(rundownId)?.providers.find((p) => p.providerId === 'manual'),
+    ).toBeUndefined()
   })
 
   test('a crashing provider does not throw and is marked errored', async () => {

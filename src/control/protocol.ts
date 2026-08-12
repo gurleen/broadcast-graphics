@@ -115,6 +115,18 @@ export const ControlCommand = z.discriminatedUnion('type', [
     packageId: z.string(),
     key: z.string(),
   }),
+  z.object({
+    type: z.literal('provider.start'),
+    rundownId: z.string(),
+    packageId: z.string(),
+    providerId: z.string(),
+  }),
+  z.object({
+    type: z.literal('provider.stop'),
+    rundownId: z.string(),
+    packageId: z.string(),
+    providerId: z.string(),
+  }),
 ])
 export type ControlCommand = z.infer<typeof ControlCommand>
 

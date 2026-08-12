@@ -107,8 +107,9 @@ export default definePackage({
 Route: `/control/$rundownId/panel/$packageId/$panelId`. The host loads the
 package bundle and passes `PackagePanelProps` (`config` / `patchConfig` /
 `replaceConfig`, this-package `data` / `providers`, `publishData` /
-`clearData`). Manifest only ships `{ id, label }` — the Panel factory resolves
-in the browser, same as template `Controls`.
+`clearData`, `startProvider` / `stopProvider`). Manifest only ships
+`{ id, label }` — the Panel factory resolves in the browser, same as template
+`Controls`.
 
 When a package declares panels, the PACKAGES tab no longer shows the generic
 config editor for that package; it links to the panel tab(s) instead.
@@ -172,16 +173,20 @@ export default definePackage({
 
 **Crash isolation:** a thrown error inside `start` (sync or async) is caught,
 logged, and the provider is retried with exponential backoff (1s → 30s cap).
-A crashing provider never takes down the control plane. `scope: 'host'`
-(default `'rundown'`) is reserved for feeds that should run once regardless of
-how many rundowns attach the package — not yet implemented; today every
-provider is rundown-scoped.
+A crashing provider never takes down the control plane. Returning a cleanup
+function from `start` keeps the provider in `ok` until stop/detach (the
+interval/timer keeps running); resolving with no cleanup marks a finished
+one-shot as `stopped`. `scope: 'host'` (default `'rundown'`) is reserved for
+feeds that should run once regardless of how many rundowns attach the package
+— not yet implemented; today every provider is rundown-scoped.
 
 `autostart` (default `true`) starts the provider when the package is
-attached. `restartOnConfigChange` (default `true`) stops + restarts running
-providers when `rundown.patchConfig` / `rundown.replaceConfig` fires — set to
-`false` if the provider already reads `ctx.config` live and doesn't need a
-restart.
+attached. Operators can also start/stop providers via `provider.start` /
+`provider.stop` (wired into package panels as `startProvider` /
+`stopProvider`). `restartOnConfigChange` (default `true`) stops + restarts
+running providers when `rundown.patchConfig` / `rundown.replaceConfig` fires —
+set to `false` if the provider already reads `ctx.config` live and doesn't
+need a restart.
 
 ## Authoring: binding live data onto props
 

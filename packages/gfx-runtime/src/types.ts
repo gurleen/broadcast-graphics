@@ -170,4 +170,6 @@ export type PackagePanelProps<TConfig extends Record<string, unknown> = Record<s
   providers: ProviderStatus[]
   publishData: (key: string, value: unknown) => void
   clearData: (key: string) => void
+  startProvider: (providerId: string) => void
+  stopProvider: (providerId: string) => void
 }

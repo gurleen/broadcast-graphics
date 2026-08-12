@@ -149,7 +149,7 @@ Invalid frames produce an `ack`/`error` with `code` + `message`; the socket stay
 `instance.patchProps` · `instance.replaceProps` · `instance.resetProps`  
 `playout.cue` · `playout.take` · `playout.in` · `playout.out` · `playout.toggle` · `playout.clearAll` · `playout.panic`  
 `rundown.attachPackage` · `rundown.detachPackage` · `rundown.patchConfig` · `rundown.replaceConfig`  
-`data.publish` · `data.clear` — see [`docs/live-data.md`](./live-data.md)
+`data.publish` · `data.clear` · `provider.start` · `provider.stop` — see [`docs/live-data.md`](./live-data.md)
 
 ### Events
 

@@ -173,6 +173,10 @@ export function useRundownController(rundownId: string | null | undefined) {
       send({ type: 'data.publish', rundownId: rundownId!, packageId, key, value }),
     clearData: (packageId: string, key: string) =>
       send({ type: 'data.clear', rundownId: rundownId!, packageId, key }),
+    startProvider: (packageId: string, providerId: string) =>
+      send({ type: 'provider.start', rundownId: rundownId!, packageId, providerId }),
+    stopProvider: (packageId: string, providerId: string) =>
+      send({ type: 'provider.stop', rundownId: rundownId!, packageId, providerId }),
   }
 }
 

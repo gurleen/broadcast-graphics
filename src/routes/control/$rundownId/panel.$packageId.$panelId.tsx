@@ -22,6 +22,8 @@ function PackagePanelPage() {
     replacePackageConfig,
     publishData,
     clearData,
+    startProvider,
+    stopProvider,
   } = useRundownController(rundownId)
 
   const catalogPkg = useMemo(
@@ -173,6 +175,8 @@ function PackagePanelPage() {
         providers={pkgProviders}
         publishData={(key, value) => void publishData(packageId, key, value)}
         clearData={(key) => void clearData(packageId, key)}
+        startProvider={(providerId) => void startProvider(packageId, providerId)}
+        stopProvider={(providerId) => void stopProvider(packageId, providerId)}
       />
     </Panel>
   )

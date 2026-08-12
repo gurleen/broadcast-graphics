@@ -340,6 +340,8 @@ function injectRundownId(command: ControlCommand, rundownId: string): ControlCom
     case 'rundown.replaceConfig':
     case 'data.publish':
     case 'data.clear':
+    case 'provider.start':
+    case 'provider.stop':
       return { ...command, rundownId: command.rundownId || rundownId }
     default:
       return command

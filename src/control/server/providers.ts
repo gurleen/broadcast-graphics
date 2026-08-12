@@ -123,12 +123,32 @@ async function runLoop(running: RunningProvider, def: ProviderDefinition): Promi
     const ctx = makeContext(running)
     const cleanup = await def.start(ctx)
     if (typeof cleanup === 'function') running.cleanup = cleanup
-    if (!running.abort.signal.aborted) {
-      // `start` resolved on its own (e.g. one-shot or finite loop) — treat as a
-      // clean stop, not an error.
-      setStatus(running, { state: 'stopped', message: null })
+
+    if (running.abort.signal.aborted) {
+      // Stopped during/just after start — stopProvider may already have cleaned up.
+      try {
+        running.cleanup?.()
+      } catch (err) {
+        console.error(`[providers] cleanup threw for ${running.key}:`, err)
+      }
+      running.cleanup = undefined
       s.delete(running.key)
+      return
     }
+
+    if (typeof cleanup === 'function') {
+      // Long-running provider: stay `ok` until stopProvider aborts. (Previously we
+      // treated a sync cleanup return as a finished one-shot, marking STOPPED while
+      // the interval kept ticking with no runner entry.)
+      await new Promise<void>((resolve) => {
+        running.abort.signal.addEventListener('abort', () => resolve(), { once: true })
+      })
+      return
+    }
+
+    // One-shot: start finished with no cleanup handle.
+    setStatus(running, { state: 'stopped', message: null })
+    s.delete(running.key)
   } catch (err) {
     if (running.abort.signal.aborted) {
       s.delete(running.key)
