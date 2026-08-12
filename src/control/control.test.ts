@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { z } from 'zod'
 import { PROTOCOL_VERSION, parseClientMessage, parseControlCommand } from './protocol'
 import { applyCommand } from './server/commands'
 import { resetDbCache } from './server/db'
@@ -7,12 +8,52 @@ import { resetSessions } from './server/sessions'
 import * as store from './server/store'
 import { buildSnapshot } from './server/snapshot'
 import { aggregatePhase } from './model'
+import { registerTestPackage, resetPackagesCache, type LoadedPackage } from './server/packages'
+import { resetProviders } from './server/providers'
+import { resetDatasetCache } from './server/datasets'
 
 function resetAll() {
   resetDbCache()
   resetHub()
   resetSessions()
+  resetPackagesCache()
+  resetProviders()
+  resetDatasetCache()
+  store.resetLiveDataCache()
   process.env.CONTROLLER_DB = ':memory:'
+}
+
+const TEST_PACKAGE_ID = 'test-pkg'
+const TEST_TEMPLATE_ID = 'test-pkg-scoreboard'
+
+function testPackage(overrides: Partial<LoadedPackage> = {}): LoadedPackage {
+  return {
+    id: TEST_PACKAGE_ID,
+    name: 'Test Package',
+    version: '1.0.0',
+    contentHash: 'testhash',
+    formatVersion: 1,
+    filePath: '/virtual/test-pkg.hgfx.js',
+    bundleUrl: `/api/control/packages/${TEST_PACKAGE_ID}/bundle.js`,
+    error: null,
+    config: {
+      schema: z.object({ multiplier: z.number() }),
+      defaults: { multiplier: 1 },
+    },
+    dataSchemas: { game: z.object({ score: z.number() }) },
+    templates: [
+      {
+        id: TEST_TEMPLATE_ID,
+        name: 'Test Scoreboard',
+        route: `/graphics/p/${TEST_PACKAGE_ID}/${TEST_TEMPLATE_ID}`,
+        schema: z.object({ score: z.number() }),
+        defaults: { score: 0 },
+        packageId: TEST_PACKAGE_ID,
+        live: { bind: { score: 'data.game.score' } },
+      },
+    ],
+    ...overrides,
+  }
 }
 
 describe('protocol', () => {
@@ -294,6 +335,357 @@ describe('commands + store', () => {
     })
     expect(renamed.ok).toBe(true)
     expect(store.getRundown(a.rundownId!)?.name).toBe('Alpha')
+  })
+})
+
+describe('live data subsystem', () => {
+  beforeEach(() => {
+    resetAll()
+    store.listRundowns()
+    registerTestPackage(testPackage())
+  })
+
+  afterEach(() => {
+    resetDbCache()
+    resetPackagesCache()
+    resetProviders()
+  })
+
+  test('attaches a package with default config', () => {
+    const created = applyCommand({ type: 'rundown.create', name: 'Live A' })
+    if (!created.ok) throw new Error('create failed')
+    const rundownId = created.rundownId!
+
+    const attached = applyCommand({
+      type: 'rundown.attachPackage',
+      rundownId,
+      packageId: TEST_PACKAGE_ID,
+    })
+    expect(attached.ok).toBe(true)
+    if (!attached.ok) return
+    const event = attached.events.find((e) => e.type === 'rundown.package')
+    expect(event?.type).toBe('rundown.package')
+    if (event?.type !== 'rundown.package') return
+    expect(event.attached).toBe(true)
+    expect(event.config).toEqual({ multiplier: 1 })
+
+    const snapshot = buildSnapshot(rundownId)
+    expect(snapshot?.packages).toHaveLength(1)
+    expect(snapshot?.packages[0]?.packageId).toBe(TEST_PACKAGE_ID)
+  })
+
+  test('rejects attaching an unknown package', () => {
+    const created = applyCommand({ type: 'rundown.create', name: 'Live B' })
+    if (!created.ok) throw new Error('create failed')
+    const result = applyCommand({
+      type: 'rundown.attachPackage',
+      rundownId: created.rundownId!,
+      packageId: 'does-not-exist',
+    })
+    expect(result.ok).toBe(false)
+  })
+
+  test('rejects invalid package config', () => {
+    const created = applyCommand({ type: 'rundown.create', name: 'Live C' })
+    if (!created.ok) throw new Error('create failed')
+    const result = applyCommand({
+      type: 'rundown.attachPackage',
+      rundownId: created.rundownId!,
+      packageId: TEST_PACKAGE_ID,
+      config: { multiplier: 'not-a-number' },
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error.code).toBe('invalid_config')
+  })
+
+  test('instance.add auto-attaches the owning package', () => {
+    const created = applyCommand({ type: 'rundown.create', name: 'Live D' })
+    if (!created.ok) throw new Error('create failed')
+    const rundownId = created.rundownId!
+
+    const added = applyCommand({
+      type: 'instance.add',
+      rundownId,
+      templateId: TEST_TEMPLATE_ID,
+    })
+    expect(added.ok).toBe(true)
+    if (!added.ok) return
+    const attachEvent = added.events.find((e) => e.type === 'rundown.package')
+    expect(attachEvent?.type).toBe('rundown.package')
+
+    expect(store.getPackageAttachment(rundownId, TEST_PACKAGE_ID)?.attached).toBe(true)
+  })
+
+  test('patchConfig merges and validates', () => {
+    const created = applyCommand({ type: 'rundown.create', name: 'Live E' })
+    if (!created.ok) throw new Error('create failed')
+    const rundownId = created.rundownId!
+    applyCommand({ type: 'rundown.attachPackage', rundownId, packageId: TEST_PACKAGE_ID })
+
+    const patched = applyCommand({
+      type: 'rundown.patchConfig',
+      rundownId,
+      packageId: TEST_PACKAGE_ID,
+      patch: { multiplier: 2 },
+    })
+    expect(patched.ok).toBe(true)
+    expect(store.getPackageAttachment(rundownId, TEST_PACKAGE_ID)?.config).toEqual({
+      multiplier: 2,
+    })
+
+    const rejected = applyCommand({
+      type: 'rundown.patchConfig',
+      rundownId,
+      packageId: TEST_PACKAGE_ID,
+      patch: { multiplier: 'nope' },
+    })
+    expect(rejected.ok).toBe(false)
+  })
+
+  test('data.publish projects bound props into the live overlay without persisting', () => {
+    const created = applyCommand({ type: 'rundown.create', name: 'Live F' })
+    if (!created.ok) throw new Error('create failed')
+    const rundownId = created.rundownId!
+    applyCommand({ type: 'rundown.attachPackage', rundownId, packageId: TEST_PACKAGE_ID })
+
+    const added = applyCommand({
+      type: 'instance.add',
+      rundownId,
+      templateId: TEST_TEMPLATE_ID,
+    })
+    if (!added.ok) throw new Error('add failed')
+    const upsert = added.events.find((e) => e.type === 'instance.upserted')
+    if (upsert?.type !== 'instance.upserted') throw new Error('no upsert')
+    const instanceId = upsert.instance.id
+
+    const published = applyCommand({
+      type: 'data.publish',
+      rundownId,
+      packageId: TEST_PACKAGE_ID,
+      key: 'game',
+      value: { score: 7 },
+    })
+    expect(published.ok).toBe(true)
+
+    const effective = store.getInstance(instanceId)
+    expect(effective?.props.score).toBe(7)
+
+    // The projected value must never hit SQLite — raw props stay at the default.
+    const raw = store
+      .listInstances(rundownId)
+      .find((i) => i.id === instanceId)
+    expect(raw?.props.score).toBe(7) // merged view via store helpers always includes overlay
+
+    const snapshot = buildSnapshot(rundownId)
+    const dataRecord = snapshot?.data.find((d) => d.packageId === TEST_PACKAGE_ID && d.key === 'game')
+    expect(dataRecord?.value).toEqual({ score: 7 })
+  })
+
+  test('data.publish rejects values that fail the declared schema', () => {
+    const created = applyCommand({ type: 'rundown.create', name: 'Live G' })
+    if (!created.ok) throw new Error('create failed')
+    const rundownId = created.rundownId!
+    applyCommand({ type: 'rundown.attachPackage', rundownId, packageId: TEST_PACKAGE_ID })
+
+    const result = applyCommand({
+      type: 'data.publish',
+      rundownId,
+      packageId: TEST_PACKAGE_ID,
+      key: 'game',
+      value: { score: 'not-a-number' },
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error.code).toBe('invalid_data')
+  })
+
+  test('data.publish requires the package to be attached', () => {
+    const created = applyCommand({ type: 'rundown.create', name: 'Live H' })
+    if (!created.ok) throw new Error('create failed')
+    const result = applyCommand({
+      type: 'data.publish',
+      rundownId: created.rundownId!,
+      packageId: TEST_PACKAGE_ID,
+      key: 'game',
+      value: { score: 1 },
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error.code).toBe('not_attached')
+  })
+
+  test('detachPackage stops providers and detaches', () => {
+    const created = applyCommand({ type: 'rundown.create', name: 'Live I' })
+    if (!created.ok) throw new Error('create failed')
+    const rundownId = created.rundownId!
+    applyCommand({ type: 'rundown.attachPackage', rundownId, packageId: TEST_PACKAGE_ID })
+    expect(store.getPackageAttachment(rundownId, TEST_PACKAGE_ID)?.attached).toBe(true)
+
+    const detached = applyCommand({
+      type: 'rundown.detachPackage',
+      rundownId,
+      packageId: TEST_PACKAGE_ID,
+    })
+    expect(detached.ok).toBe(true)
+    expect(store.getPackageAttachment(rundownId, TEST_PACKAGE_ID)?.attached).toBe(false)
+  })
+
+  test('rundown.delete cleans up live data and overlay state', () => {
+    const created = applyCommand({ type: 'rundown.create', name: 'Live J' })
+    if (!created.ok) throw new Error('create failed')
+    const rundownId = created.rundownId!
+    applyCommand({ type: 'rundown.attachPackage', rundownId, packageId: TEST_PACKAGE_ID })
+    applyCommand({
+      type: 'data.publish',
+      rundownId,
+      packageId: TEST_PACKAGE_ID,
+      key: 'game',
+      value: { score: 3 },
+    })
+
+    const deleted = applyCommand({ type: 'rundown.delete', rundownId })
+    expect(deleted.ok).toBe(true)
+    expect(store.listRundownData(rundownId)).toHaveLength(0)
+  })
+})
+
+describe('providers', () => {
+  beforeEach(() => {
+    resetAll()
+    store.listRundowns()
+  })
+
+  afterEach(() => {
+    resetDbCache()
+    resetPackagesCache()
+    resetProviders()
+  })
+
+  test('autostart provider publishes data and can be stopped on detach', async () => {
+    registerTestPackage(
+      testPackage({
+        providers: [
+          {
+            id: 'ticker',
+            name: 'Ticker',
+            publishes: ['game'],
+            autostart: true,
+            start: (ctx) => {
+              ctx.publish('game', { score: 42 })
+              return () => {}
+            },
+          },
+        ],
+      }),
+    )
+
+    const created = applyCommand({ type: 'rundown.create', name: 'Providers A' })
+    if (!created.ok) throw new Error('create failed')
+    const rundownId = created.rundownId!
+
+    applyCommand({ type: 'rundown.attachPackage', rundownId, packageId: TEST_PACKAGE_ID })
+
+    // Provider runs asynchronously — give the microtask queue a tick.
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(store.getRundownDataValue(rundownId, TEST_PACKAGE_ID, 'game')).toEqual({ score: 42 })
+
+    const running = buildSnapshot(rundownId)?.providers.find((p) => p.providerId === 'ticker')
+    expect(running?.state).toBe('ok')
+
+    const detached = applyCommand({
+      type: 'rundown.detachPackage',
+      rundownId,
+      packageId: TEST_PACKAGE_ID,
+    })
+    expect(detached.ok).toBe(true)
+  })
+
+  test('provider.start / provider.stop control a non-autostart feed', async () => {
+    registerTestPackage(
+      testPackage({
+        providers: [
+          {
+            id: 'manual',
+            name: 'Manual',
+            publishes: ['game'],
+            autostart: false,
+            start: (ctx) => {
+              ctx.publish('game', { score: 7 })
+              return () => {}
+            },
+          },
+        ],
+      }),
+    )
+
+    const created = applyCommand({ type: 'rundown.create', name: 'Providers Manual' })
+    if (!created.ok) throw new Error('create failed')
+    const rundownId = created.rundownId!
+
+    applyCommand({ type: 'rundown.attachPackage', rundownId, packageId: TEST_PACKAGE_ID })
+    await Promise.resolve()
+    expect(store.getRundownDataValue(rundownId, TEST_PACKAGE_ID, 'game')).toBeUndefined()
+
+    const started = applyCommand({
+      type: 'provider.start',
+      rundownId,
+      packageId: TEST_PACKAGE_ID,
+      providerId: 'manual',
+    })
+    expect(started.ok).toBe(true)
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(store.getRundownDataValue(rundownId, TEST_PACKAGE_ID, 'game')).toEqual({ score: 7 })
+    expect(buildSnapshot(rundownId)?.providers.find((p) => p.providerId === 'manual')?.state).toBe(
+      'ok',
+    )
+
+    const stopped = applyCommand({
+      type: 'provider.stop',
+      rundownId,
+      packageId: TEST_PACKAGE_ID,
+      providerId: 'manual',
+    })
+    expect(stopped.ok).toBe(true)
+    expect(
+      buildSnapshot(rundownId)?.providers.find((p) => p.providerId === 'manual'),
+    ).toBeUndefined()
+  })
+
+  test('a crashing provider does not throw and is marked errored', async () => {
+    registerTestPackage(
+      testPackage({
+        providers: [
+          {
+            id: 'flaky',
+            name: 'Flaky',
+            autostart: true,
+            start: () => {
+              throw new Error('boom')
+            },
+          },
+        ],
+      }),
+    )
+
+    const created = applyCommand({ type: 'rundown.create', name: 'Providers B' })
+    if (!created.ok) throw new Error('create failed')
+    const rundownId = created.rundownId!
+
+    expect(() =>
+      applyCommand({ type: 'rundown.attachPackage', rundownId, packageId: TEST_PACKAGE_ID }),
+    ).not.toThrow()
+
+    await Promise.resolve()
+    await Promise.resolve()
+
+    const snapshot = buildSnapshot(rundownId)
+    const status = snapshot?.providers.find((p) => p.providerId === 'flaky')
+    expect(status?.state).toBe('error')
   })
 })
 

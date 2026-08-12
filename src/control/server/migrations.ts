@@ -1,6 +1,6 @@
 import type { Database } from 'bun:sqlite'
 
-const SCHEMA_VERSION = 3
+const SCHEMA_VERSION = 4
 
 /**
  * Versioned migrations. The abandoned unversioned rundowns/instances tables
@@ -99,6 +99,19 @@ export function runMigrations(db: Database): void {
     existing.forEach((r, index) => {
       update.run(index, r.id)
     })
+  }
+
+  if (current < 4) {
+    db.exec(`
+      create table if not exists rundown_packages (
+        rundown_id text not null references rundowns(id) on delete cascade,
+        package_id text not null,
+        attached integer not null default 1,
+        config text not null default '{}',
+        attached_at integer not null,
+        primary key (rundown_id, package_id)
+      );
+    `)
   }
 
   if (current < SCHEMA_VERSION) {

@@ -68,10 +68,47 @@ export const RendererSession = z.object({
 })
 export type RendererSession = z.infer<typeof RendererSession>
 
+/** A package attached to a rundown, carrying its per-rundown config. */
+export const PackageAttachment = z.object({
+  packageId: z.string(),
+  attached: z.boolean(),
+  config: z.record(z.string(), z.unknown()),
+  attachedAt: z.number(),
+})
+export type PackageAttachment = z.infer<typeof PackageAttachment>
+
+/** A live-data value published by a provider (or external producer) for a rundown. */
+export const LiveDataRecord = z.object({
+  packageId: z.string(),
+  key: z.string(),
+  value: z.unknown(),
+  revision: z.number().int(),
+  updatedAt: z.number(),
+})
+export type LiveDataRecord = z.infer<typeof LiveDataRecord>
+
+export const ProviderState = z.enum(['idle', 'starting', 'ok', 'error', 'stopped'])
+export type ProviderState = z.infer<typeof ProviderState>
+
+export const ProviderStatusRecord = z.object({
+  packageId: z.string(),
+  providerId: z.string(),
+  state: ProviderState,
+  message: z.string().nullable(),
+  at: z.number(),
+})
+export type ProviderStatusRecord = z.infer<typeof ProviderStatusRecord>
+
 export const RundownSnapshot = z.object({
   rundown: Rundown,
   instances: z.array(GraphicInstance),
   renderers: z.array(RendererSession),
+  /** Packages attached to this rundown (only attached === true). */
+  packages: z.array(PackageAttachment),
+  /** Current live-data values for attached packages. */
+  data: z.array(LiveDataRecord),
+  /** Live status of in-process providers running for this rundown. */
+  providers: z.array(ProviderStatusRecord),
   seq: z.number().int(),
   serverTime: z.number(),
 })

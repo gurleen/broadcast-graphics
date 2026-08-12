@@ -8,13 +8,21 @@ import type { ExampleTickerProps } from './schema'
  * Imperative GSAP timeline driven by `onScreen`. gsap is bundled into the
  * package artifact (not listed in hydra.config shared), proving the
  * bring-your-own-animation-library path.
+ *
+ * Marquee position is advanced on the GSAP ticker (not a from/to tween), so
+ * live-data message swaps update the text in place without snapping x back to 0.
  */
 export default function ExampleGsapTicker({
   props,
   onScreen,
 }: TemplateRenderProps<ExampleTickerProps>) {
   const rootRef = useRef<HTMLDivElement>(null)
-  const tlRef = useRef<gsap.core.Timeline | null>(null)
+  const marqueeRef = useRef<HTMLDivElement>(null)
+  const inOutTlRef = useRef<gsap.core.Timeline | null>(null)
+  const speedRef = useRef(props.speed)
+  const onScreenRef = useRef(onScreen)
+  speedRef.current = props.speed
+  onScreenRef.current = onScreen
 
   useEffect(() => {
     const el = rootRef.current
@@ -25,31 +33,48 @@ export default function ExampleGsapTicker({
       el,
       { y: 60, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out' },
-      0,
     )
-    tl.to(
-      el.querySelector('[data-marquee]'),
-      {
-        x: -200,
-        duration: 4 / Math.max(props.speed, 0.1),
-        ease: 'none',
-        repeat: -1,
-      },
-      0.3,
-    )
-    tlRef.current = tl
+    inOutTlRef.current = tl
+    if (onScreen) tl.play()
     return () => {
       tl.kill()
-      tlRef.current = null
+      inOutTlRef.current = null
     }
-  }, [props.speed, props.message])
+    // onScreen is read once to resume after mount; toggles use the effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
-    const tl = tlRef.current
+    const tl = inOutTlRef.current
     if (!tl) return
     if (onScreen) tl.play()
     else tl.pause(0).reverse()
   }, [onScreen])
+
+  // Continuous crawl — position survives message changes; width/speed read live.
+  useEffect(() => {
+    const marquee = marqueeRef.current
+    if (!marquee) return
+
+    let x = Number(gsap.getProperty(marquee, 'x')) || 0
+
+    const tick = (_time: number, deltaMs: number) => {
+      if (!onScreenRef.current) return
+      const travel = Math.max(marquee.scrollWidth, GRAPHIC_WIDTH)
+      const pxPerSec = 160 * Math.max(speedRef.current, 0.1)
+      x -= (pxPerSec * deltaMs) / 1000
+      if (travel > 0) {
+        while (x <= -travel) x += travel
+        while (x > 0) x -= travel
+      }
+      gsap.set(marquee, { x })
+    }
+
+    gsap.ticker.add(tick)
+    return () => {
+      gsap.ticker.remove(tick)
+    }
+  }, [])
 
   return (
     <HtmlCanvas>
@@ -71,6 +96,7 @@ export default function ExampleGsapTicker({
         }}
       >
         <div
+          ref={marqueeRef}
           data-marquee
           style={{
             whiteSpace: 'nowrap',

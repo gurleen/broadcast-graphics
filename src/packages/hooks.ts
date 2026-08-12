@@ -81,7 +81,12 @@ export function useTemplateComponents(
     return () => {
       cancelled = true
     }
-  }, [idsKey, pkgKey, templateIds, packages])
+    // idsKey/pkgKey are stable content fingerprints of templateIds/packages; using
+    // the raw arrays here would re-run this effect on every render (new array
+    // literals from callers) and, when a template's owning package is missing,
+    // loop forever (load → setTick → re-render → reload → ...).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsKey, pkgKey])
 
   useEffect(() => subscribePackageLoads(() => setTick((t) => t + 1)), [])
 

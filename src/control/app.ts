@@ -30,6 +30,8 @@ import {
   removePackage,
   startPackagesWatcher,
 } from '#/control/server/packages'
+import { ensureDataset } from '#/control/server/datasets'
+import { getProviderLogs, listProviderStatuses, startAllAttachedProviders } from '#/control/server/providers'
 
 export { websocket }
 
@@ -62,7 +64,10 @@ function ensureHubWired() {
 ensureHubWired()
 
 void ensurePackagesLoaded()
-  .then(() => startPackagesWatcher())
+  .then(() => {
+    startPackagesWatcher()
+    startAllAttachedProviders()
+  })
   .catch((err) => console.error('[packages] boot load failed', err))
 
 const app = new Hono()
@@ -191,6 +196,26 @@ app.get('/api/control/packages/:id/bundle.js', async (c) => {
   })
 })
 
+app.get('/api/control/datasets/:packageId/:datasetId', async (c) => {
+  const data = await ensureDataset(c.req.param('packageId'), c.req.param('datasetId'))
+  if (data === undefined) {
+    return c.json({ ok: false, error: { code: 'not_found', message: 'Dataset not found' } }, 404)
+  }
+  return c.json({ ok: true, data })
+})
+
+app.get('/api/control/rundowns/:id/providers', (c) => {
+  const rundownId = c.req.param('id')
+  const statuses = listProviderStatuses(rundownId)
+  return c.json({
+    ok: true,
+    providers: statuses.map((s) => ({
+      ...s,
+      logs: getProviderLogs(rundownId, s.packageId, s.providerId),
+    })),
+  })
+})
+
 app.get('/api/control/active-rundown', (c) =>
   c.json({ rundownId: store.getActiveRundownId() }),
 )
@@ -309,6 +334,14 @@ function injectRundownId(command: ControlCommand, rundownId: string): ControlCom
       return { ...command, rundownId: command.rundownId || rundownId }
     case 'rundown.rename':
     case 'rundown.delete':
+    case 'rundown.attachPackage':
+    case 'rundown.detachPackage':
+    case 'rundown.patchConfig':
+    case 'rundown.replaceConfig':
+    case 'data.publish':
+    case 'data.clear':
+    case 'provider.start':
+    case 'provider.stop':
       return { ...command, rundownId: command.rundownId || rundownId }
     default:
       return command

@@ -7,6 +7,10 @@ import { mkdirSync, watch, type FSWatcher } from 'node:fs'
 import { readdir, readFile, writeFile, unlink, mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import type { z } from 'zod'
+import type {
+  DatasetDeclaration,
+  ProviderDefinition,
+} from '#/templates/types'
 import type { TemplateSchema } from '#/templates/types'
 import { installServerRuntime } from '#/packages/runtime.server'
 import { getDb } from './db'
@@ -41,6 +45,12 @@ export type LoadedPackageTemplate = TemplateSchema<Record<string, unknown>> & {
   PreviewControlsFactory?: () => Promise<unknown>
 }
 
+export type LoadedPackageConfig = {
+  schema: z.ZodType<Record<string, unknown>>
+  defaults: Record<string, unknown>
+  fields?: TemplateSchema<Record<string, unknown>>['fields']
+}
+
 export type LoadedPackage = {
   id: string
   name: string
@@ -50,6 +60,17 @@ export type LoadedPackage = {
   filePath: string
   bundleUrl: string
   templates: LoadedPackageTemplate[]
+  /** Package-level operator config schema, if declared. */
+  config?: LoadedPackageConfig
+  /** Rundown-scoped live-data key schemas, keyed by name. */
+  dataSchemas?: Record<string, z.ZodType<unknown>>
+  /** Remote reference datasets the package wants cached. */
+  datasets?: DatasetDeclaration[]
+  /** In-process live-data providers (executable — server-only, never sent to clients). */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  providers?: ProviderDefinition<any>[]
+  /** Control-panel tab metadata (id/label only — Panel resolves in the browser). */
+  panels?: Array<{ id: string; label: string }>
   error: string | null
 }
 
@@ -58,6 +79,16 @@ type PackageModule = {
     id: string
     name: string
     version: string
+    config?: {
+      schema: z.ZodType<Record<string, unknown>>
+      defaults: Record<string, unknown>
+      fields?: TemplateSchema<Record<string, unknown>>['fields']
+    }
+    data?: Record<string, z.ZodType<unknown>>
+    datasets?: DatasetDeclaration[]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    providers?: ProviderDefinition<any>[]
+    panels?: Array<{ id: string; label: string; Panel?: () => Promise<unknown> }>
     templates: Array<{
       id: string
       name: string
@@ -65,6 +96,7 @@ type PackageModule = {
       defaults: Record<string, unknown>
       fields?: TemplateSchema<Record<string, unknown>>['fields']
       transition?: TemplateSchema<Record<string, unknown>>['transition']
+      live?: TemplateSchema<Record<string, unknown>>['live']
       Render?: () => Promise<unknown>
       Controls?: () => Promise<unknown>
       PreviewControls?: () => Promise<unknown>
@@ -82,6 +114,7 @@ type PackageModule = {
       transition?: TemplateSchema<Record<string, unknown>>['transition']
       jsonSchema: Record<string, unknown>
     }>
+    panels?: Array<{ id: string; label: string }>
   }
 }
 
@@ -204,6 +237,7 @@ async function importPackageFile(filePath: string, contentHash: string): Promise
     defaults: t.defaults,
     fields: t.fields,
     transition: t.transition,
+    live: t.live,
     packageId: pkg.id,
     RenderFactory: t.Render,
     ControlsFactory: t.Controls,
@@ -219,6 +253,13 @@ async function importPackageFile(filePath: string, contentHash: string): Promise
     filePath: abs,
     bundleUrl: `/api/control/packages/${pkg.id}/bundle.js`,
     templates,
+    config: pkg.config,
+    dataSchemas: pkg.data,
+    datasets: pkg.datasets,
+    providers: pkg.providers,
+    panels:
+      pkg.panels?.map((p) => ({ id: p.id, label: p.label })) ??
+      manifest?.panels?.map((p) => ({ id: p.id, label: p.label })),
     error: null,
   }
 }
@@ -402,6 +443,14 @@ export function startPackagesWatcher(): void {
       void reloadPackages().catch((err) => console.error('[packages] reload failed', err))
     }, 200)
   })
+}
+
+/** Test helper: inject a fully-formed package without going through disk/import. */
+export function registerTestPackage(pkg: LoadedPackage): void {
+  const next = new Map(state().packages)
+  next.set(pkg.id, pkg)
+  rebuildIndex(next)
+  state().ready = true
 }
 
 /** Test helper. */

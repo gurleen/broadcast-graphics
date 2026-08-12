@@ -3,6 +3,7 @@
  */
 import type { ComponentType } from 'react'
 import type {
+  PackagePanelProps,
   TemplateControlsProps,
   TemplateDefinition,
   TemplateRenderProps,
@@ -20,12 +21,19 @@ export type PackageCatalogEntry = {
   templateIds?: string[]
 }
 
+export type ResolvedClientPanel = {
+  id: string
+  label: string
+  Panel: ComponentType<PackagePanelProps<Record<string, unknown>>>
+}
+
 export type LoadedClientPackage = {
   id: string
   name: string
   version: string
   contentHash: string
   templates: Map<string, ResolvedClientTemplate>
+  panels: Map<string, ResolvedClientPanel>
 }
 
 export type ResolvedClientTemplate = TemplateDefinition<Record<string, unknown>> & {
@@ -37,6 +45,11 @@ type PackageModule = {
     id: string
     name: string
     version: string
+    panels?: Array<{
+      id: string
+      label: string
+      Panel: () => Promise<unknown>
+    }>
     templates: Array<{
       id: string
       name: string
@@ -53,6 +66,7 @@ type PackageModule = {
     formatVersion: number
     package: { id: string; name: string; version: string }
     templates: Array<{ id: string; name: string }>
+    panels?: Array<{ id: string; label: string }>
   }
 }
 
@@ -117,6 +131,16 @@ async function resolveTemplate(
   }
 }
 
+async function resolvePanel(
+  p: NonNullable<PackageModule['default']['panels']>[number],
+): Promise<ResolvedClientPanel> {
+  const Panel = (await resolveExport(await p.Panel())) as
+    | ComponentType<PackagePanelProps<Record<string, unknown>>>
+    | undefined
+  if (!Panel) throw new Error(`Panel ${p.id} factory returned nothing`)
+  return { id: p.id, label: p.label, Panel }
+}
+
 export async function loadPackage(
   entry: PackageCatalogEntry,
 ): Promise<LoadedClientPackage> {
@@ -137,12 +161,17 @@ export async function loadPackage(
     for (const t of pkg.templates) {
       templates.set(t.id, await resolveTemplate(pkg.id, t))
     }
+    const panels = new Map<string, ResolvedClientPanel>()
+    for (const p of pkg.panels ?? []) {
+      panels.set(p.id, await resolvePanel(p))
+    }
     const loaded: LoadedClientPackage = {
       id: pkg.id,
       name: pkg.name,
       version: pkg.version,
       contentHash: entry.contentHash,
       templates,
+      panels,
     }
     const slot = cache.get(entry.id)
     if (slot) slot.value = loaded
@@ -183,6 +212,15 @@ export function clearPackageCache(): void {
   notify()
 }
 
+/** Resolve a package control panel component (loads the package bundle if needed). */
+export async function loadPackagePanel(
+  entry: PackageCatalogEntry,
+  panelId: string,
+): Promise<ResolvedClientPanel | undefined> {
+  const loaded = await loadPackage(entry)
+  return loaded.panels.get(panelId)
+}
+
 /** Resolve PreviewControls for a package template (optional). */
 export async function loadPreviewControls(
   entry: PackageCatalogEntry,
@@ -190,6 +228,7 @@ export async function loadPreviewControls(
 ): Promise<ComponentType<TemplateControlsProps<Record<string, unknown>>> | undefined> {
   const loaded = await loadPackage(entry)
   // PreviewControls aren't stored on ResolvedClientTemplate — re-import factory from module
+  void loaded
   installClientRuntime()
   const url = `${entry.bundleUrl}?v=${encodeURIComponent(entry.contentHash)}`
   const mod = (await import(/* @vite-ignore */ url)) as PackageModule

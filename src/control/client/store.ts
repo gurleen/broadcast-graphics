@@ -1,11 +1,27 @@
 import type { ControlEvent } from '../protocol'
-import type { GraphicInstance, RendererSession, Rundown, RundownSnapshot } from '../model'
+import type {
+  GraphicInstance,
+  LiveDataRecord,
+  PackageAttachment,
+  ProviderStatusRecord,
+  RendererSession,
+  Rundown,
+  RundownSnapshot,
+} from '../model'
 import {
   createControlSocket,
   defaultControlWsUrl,
   type ControlSocket,
   type ControlSocketStatus,
 } from './socket'
+
+function dataKey(packageId: string, key: string): string {
+  return `${packageId}\u0000${key}`
+}
+
+function providerKey(packageId: string, providerId: string): string {
+  return `${packageId}\u0000${providerId}`
+}
 
 export type RundownStoreState = {
   status: ControlSocketStatus
@@ -14,6 +30,9 @@ export type RundownStoreState = {
   rundown: Rundown | null
   instances: Map<string, GraphicInstance>
   renderers: Map<string, RendererSession>
+  packages: Map<string, PackageAttachment>
+  data: Map<string, LiveDataRecord>
+  providers: Map<string, ProviderStatusRecord>
   seq: number
   error: { code: string; message: string } | null
   /** Increments on playout.panic; resets when any instance goes on-air. */
@@ -40,6 +59,9 @@ function emptyState(): RundownStoreState {
     rundown: null,
     instances: new Map(),
     renderers: new Map(),
+    packages: new Map(),
+    data: new Map(),
+    providers: new Map(),
     seq: 0,
     error: null,
     panicSeq: 0,
@@ -53,6 +75,11 @@ function applySnapshot(state: RundownStoreState, snapshot: RundownSnapshot): Run
     rundown: snapshot.rundown,
     instances: new Map(snapshot.instances.map((i) => [i.id, i])),
     renderers: new Map(snapshot.renderers.map((r) => [r.sessionId, r])),
+    packages: new Map(snapshot.packages.map((p) => [p.packageId, p])),
+    data: new Map(snapshot.data.map((d) => [dataKey(d.packageId, d.key), d])),
+    providers: new Map(
+      snapshot.providers.map((p) => [providerKey(p.packageId, p.providerId), p]),
+    ),
     seq: snapshot.seq,
     error: null,
     panicSeq: 0,
@@ -65,6 +92,9 @@ function applyEvent(state: RundownStoreState, seq: number, event: ControlEvent):
     seq,
     instances: new Map(state.instances),
     renderers: new Map(state.renderers),
+    packages: new Map(state.packages),
+    data: new Map(state.data),
+    providers: new Map(state.providers),
   }
 
   switch (event.type) {
@@ -158,6 +188,33 @@ function applyEvent(state: RundownStoreState, seq: number, event: ControlEvent):
         )
       }
       break
+    case 'rundown.package':
+      next.packages.set(event.packageId, {
+        packageId: event.packageId,
+        attached: event.attached,
+        config: event.config,
+        attachedAt: Date.now(),
+      })
+      if (!event.attached) next.packages.delete(event.packageId)
+      break
+    case 'data.changed':
+      next.data.set(dataKey(event.packageId, event.key), {
+        packageId: event.packageId,
+        key: event.key,
+        value: event.value,
+        revision: event.revision,
+        updatedAt: event.updatedAt,
+      })
+      break
+    case 'provider.status':
+      next.providers.set(providerKey(event.packageId, event.providerId), {
+        packageId: event.packageId,
+        providerId: event.providerId,
+        state: event.state,
+        message: event.message,
+        at: event.at,
+      })
+      break
   }
 
   if (next.rundown) {
@@ -165,6 +222,9 @@ function applyEvent(state: RundownStoreState, seq: number, event: ControlEvent):
       rundown: next.rundown,
       instances: [...next.instances.values()].sort((a, b) => a.sortOrder - b.sortOrder),
       renderers: [...next.renderers.values()],
+      packages: [...next.packages.values()],
+      data: [...next.data.values()],
+      providers: [...next.providers.values()],
       seq: next.seq,
       serverTime: Date.now(),
     }

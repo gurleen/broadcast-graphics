@@ -1,6 +1,7 @@
 import type { Database } from 'bun:sqlite'
-import type { GraphicInstance, Rundown } from '../model'
+import type { GraphicInstance, LiveDataRecord, PackageAttachment, Rundown } from '../model'
 import { getDb } from './db'
+import { deepMerge } from './util'
 
 type RundownRow = {
   id: string
@@ -147,14 +148,14 @@ export function listInstances(rundownId: string, db: Database = getDb()): Graphi
       'select * from instances where rundown_id = ? order by sort_order asc, id asc',
     )
     .all(rundownId)
-    .map((row) => mapInstance(row, rundown.cuedInstanceId))
+    .map((row) => applyLiveOverlay(mapInstance(row, rundown.cuedInstanceId)))
 }
 
 export function getInstance(id: string, db: Database = getDb()): GraphicInstance | null {
   const row = db.query<InstanceRow, [string]>('select * from instances where id = ?').get(id)
   if (!row) return null
   const rundown = getRundown(row.rundown_id, db)
-  return mapInstance(row, rundown?.cuedInstanceId ?? null)
+  return applyLiveOverlay(mapInstance(row, rundown?.cuedInstanceId ?? null))
 }
 
 export type CreateInstanceInput = {
@@ -274,4 +275,244 @@ export function clearAllOnScreen(rundownId: string, db: Database = getDb()): Gra
     'update instances set on_screen = 0, revision = revision + 1, updated_at = ? where rundown_id = ? and on_screen = 1',
   ).run(now, rundownId)
   return listInstances(rundownId, db)
+}
+
+// ── Package attachments (per-rundown opt-in + config) ───────────────────────
+
+type PackageAttachmentRow = {
+  rundown_id: string
+  package_id: string
+  attached: number
+  config: string
+  attached_at: number
+}
+
+function mapAttachment(row: PackageAttachmentRow): PackageAttachment {
+  return {
+    packageId: row.package_id,
+    attached: row.attached === 1,
+    config: JSON.parse(row.config) as Record<string, unknown>,
+    attachedAt: row.attached_at,
+  }
+}
+
+/** Attached packages for a rundown. Pass `onlyAttached: false` to include detached rows (config kept). */
+export function listPackageAttachments(
+  rundownId: string,
+  onlyAttached = true,
+  db: Database = getDb(),
+): PackageAttachment[] {
+  const rows = onlyAttached
+    ? db
+        .query<PackageAttachmentRow, [string]>(
+          'select * from rundown_packages where rundown_id = ? and attached = 1 order by package_id',
+        )
+        .all(rundownId)
+    : db
+        .query<PackageAttachmentRow, [string]>(
+          'select * from rundown_packages where rundown_id = ? order by package_id',
+        )
+        .all(rundownId)
+  return rows.map(mapAttachment)
+}
+
+export function getPackageAttachment(
+  rundownId: string,
+  packageId: string,
+  db: Database = getDb(),
+): PackageAttachment | null {
+  const row = db
+    .query<PackageAttachmentRow, [string, string]>(
+      'select * from rundown_packages where rundown_id = ? and package_id = ?',
+    )
+    .get(rundownId, packageId)
+  return row ? mapAttachment(row) : null
+}
+
+/** Attach (or re-attach) a package, preserving prior config unless `config` is given. */
+export function attachPackage(
+  rundownId: string,
+  packageId: string,
+  config?: Record<string, unknown>,
+  db: Database = getDb(),
+): PackageAttachment {
+  const now = Date.now()
+  const existing = getPackageAttachment(rundownId, packageId, db)
+  const nextConfig = config ?? existing?.config ?? {}
+  db.query(
+    `insert into rundown_packages (rundown_id, package_id, attached, config, attached_at)
+     values (?, ?, 1, ?, ?)
+     on conflict(rundown_id, package_id) do update set
+       attached = 1,
+       config = excluded.config,
+       attached_at = excluded.attached_at`,
+  ).run(rundownId, packageId, JSON.stringify(nextConfig), now)
+  return getPackageAttachment(rundownId, packageId, db)!
+}
+
+/** Detach a package, keeping its config so re-attaching restores it. */
+export function detachPackage(
+  rundownId: string,
+  packageId: string,
+  db: Database = getDb(),
+): PackageAttachment | null {
+  const existing = getPackageAttachment(rundownId, packageId, db)
+  if (!existing) return null
+  db.query(
+    'update rundown_packages set attached = 0 where rundown_id = ? and package_id = ?',
+  ).run(rundownId, packageId)
+  return getPackageAttachment(rundownId, packageId, db)
+}
+
+export function patchPackageConfig(
+  rundownId: string,
+  packageId: string,
+  patch: Record<string, unknown>,
+  db: Database = getDb(),
+): PackageAttachment | null {
+  const existing = getPackageAttachment(rundownId, packageId, db)
+  if (!existing) return null
+  const merged = deepMerge(existing.config, patch)
+  db.query('update rundown_packages set config = ? where rundown_id = ? and package_id = ?').run(
+    JSON.stringify(merged),
+    rundownId,
+    packageId,
+  )
+  return getPackageAttachment(rundownId, packageId, db)
+}
+
+export function replacePackageConfig(
+  rundownId: string,
+  packageId: string,
+  config: Record<string, unknown>,
+  db: Database = getDb(),
+): PackageAttachment | null {
+  const existing = getPackageAttachment(rundownId, packageId, db)
+  if (!existing) return null
+  db.query('update rundown_packages set config = ? where rundown_id = ? and package_id = ?').run(
+    JSON.stringify(config),
+    rundownId,
+    packageId,
+  )
+  return getPackageAttachment(rundownId, packageId, db)
+}
+
+// ── Rundown live-data store (ephemeral, in-memory, last-value-wins) ─────────
+
+type DataEntry = { value: unknown; revision: number; updatedAt: number }
+type DataState = Map<string, Map<string, DataEntry>>
+
+type GlobalData = typeof globalThis & { __controllerData?: DataState }
+
+function dataState(): DataState {
+  const g = globalThis as GlobalData
+  if (!g.__controllerData) g.__controllerData = new Map()
+  return g.__controllerData
+}
+
+function dataKey(packageId: string, key: string): string {
+  return `${packageId}\u0000${key}`
+}
+
+export function publishRundownData(
+  rundownId: string,
+  packageId: string,
+  key: string,
+  value: unknown,
+): LiveDataRecord {
+  const state = dataState()
+  const bucket = state.get(rundownId) ?? new Map<string, DataEntry>()
+  const compound = dataKey(packageId, key)
+  const prevRevision = bucket.get(compound)?.revision ?? 0
+  const entry: DataEntry = { value, revision: prevRevision + 1, updatedAt: Date.now() }
+  bucket.set(compound, entry)
+  state.set(rundownId, bucket)
+  return { packageId, key, value: entry.value, revision: entry.revision, updatedAt: entry.updatedAt }
+}
+
+export function clearRundownData(rundownId: string, packageId: string, key: string): void {
+  dataState().get(rundownId)?.delete(dataKey(packageId, key))
+}
+
+export function clearRundownDataAll(rundownId: string): void {
+  dataState().delete(rundownId)
+}
+
+export function getRundownDataValue(rundownId: string, packageId: string, key: string): unknown {
+  return dataState().get(rundownId)?.get(dataKey(packageId, key))?.value
+}
+
+export function listRundownData(rundownId: string): LiveDataRecord[] {
+  const bucket = dataState().get(rundownId)
+  if (!bucket) return []
+  const out: LiveDataRecord[] = []
+  for (const [compound, entry] of bucket) {
+    const sep = compound.indexOf('\u0000')
+    out.push({
+      packageId: compound.slice(0, sep),
+      key: compound.slice(sep + 1),
+      value: entry.value,
+      revision: entry.revision,
+      updatedAt: entry.updatedAt,
+    })
+  }
+  return out
+}
+
+// ── Live overlay (server-projected props, never persisted to SQLite) ───────
+
+type OverlayEntry = { props: Record<string, unknown>; revision: number }
+type OverlayState = Map<string, OverlayEntry>
+
+type GlobalOverlay = typeof globalThis & { __controllerLiveOverlay?: OverlayState }
+
+function overlayState(): OverlayState {
+  const g = globalThis as GlobalOverlay
+  if (!g.__controllerLiveOverlay) g.__controllerLiveOverlay = new Map()
+  return g.__controllerLiveOverlay
+}
+
+function applyLiveOverlay(instance: GraphicInstance): GraphicInstance {
+  const overlay = overlayState().get(instance.id)
+  if (!overlay) return instance
+  return {
+    ...instance,
+    props: deepMerge(instance.props, overlay.props),
+    revision: Math.max(instance.revision, overlay.revision),
+  }
+}
+
+/**
+ * Merge a live-projected props patch into an instance's overlay. Never touches
+ * SQLite — safe to call at clock/score tick rates. Returns the effective
+ * (persisted + overlay) instance, or `null` if the instance doesn't exist.
+ */
+export function setLiveOverlayProps(
+  instanceId: string,
+  patch: Record<string, unknown>,
+  db: Database = getDb(),
+): GraphicInstance | null {
+  const row = db.query<InstanceRow, [string]>('select * from instances where id = ?').get(instanceId)
+  if (!row) return null
+  const rundown = getRundown(row.rundown_id, db)
+  const persisted = mapInstance(row, rundown?.cuedInstanceId ?? null)
+
+  const state = overlayState()
+  const existing = state.get(instanceId)
+  const nextProps = deepMerge(existing?.props ?? {}, patch)
+  const nextRevision = Math.max(existing?.revision ?? 0, persisted.revision) + 1
+  state.set(instanceId, { props: nextProps, revision: nextRevision })
+
+  return applyLiveOverlay(persisted)
+}
+
+export function clearLiveOverlay(instanceId: string): void {
+  overlayState().delete(instanceId)
+}
+
+/** Test helper. */
+export function resetLiveDataCache(): void {
+  const g = globalThis as GlobalData & GlobalOverlay
+  g.__controllerData = undefined
+  g.__controllerLiveOverlay = undefined
 }

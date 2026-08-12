@@ -27,4 +27,8 @@ export const exampleTickerTemplateSchema: TemplateSchema<ExampleTickerProps> = {
     speed: { label: 'Speed', section: 'MOTION', type: 'slider', min: 0.25, max: 3, step: 0.25 },
   },
   transition: { inMs: 500, outMs: 400 },
+  // See ../../live-data.ts — bound to the `ticker` live-data key the
+  // `example-ticker-feed` provider publishes, once the rundown attaches
+  // this package and this instance is added.
+  live: { bind: { message: 'data.ticker.message' } },
 }

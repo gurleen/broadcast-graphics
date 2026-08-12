@@ -1,3 +1,4 @@
+import type { FieldDef } from '@hydra-tv/hydra-gfx-runtime/types'
 import type { DefinedPackage, PackageManifest } from './index'
 import { FORMAT_VERSION } from './index'
 
@@ -140,7 +141,33 @@ export async function buildManifest(
       defaults: t.defaults as Record<string, unknown>,
       fields: t.fields as PackageManifest['templates'][number]['fields'],
       transition: t.transition,
+      live: t.live,
       jsonSchema: z.toJSONSchema(t.schema) as Record<string, unknown>,
+    })),
+    config: pkg.config
+      ? {
+          defaults: pkg.config.defaults as Record<string, unknown>,
+          fields: pkg.config.fields as Record<string, FieldDef> | undefined,
+          jsonSchema: z.toJSONSchema(pkg.config.schema) as Record<string, unknown>,
+        }
+      : undefined,
+    dataKeys: pkg.data
+      ? Object.entries(pkg.data).map(([key, schema]) => ({
+          key,
+          jsonSchema: z.toJSONSchema(schema) as Record<string, unknown>,
+        }))
+      : undefined,
+    datasets: pkg.datasets,
+    providers: pkg.providers?.map((p) => ({
+      id: p.id,
+      name: p.name,
+      publishes: p.publishes ?? [],
+      scope: p.scope ?? 'rundown',
+      autostart: p.autostart ?? true,
+    })),
+    panels: pkg.panels?.map((p) => ({
+      id: p.id,
+      label: p.label,
     })),
   }
 }
