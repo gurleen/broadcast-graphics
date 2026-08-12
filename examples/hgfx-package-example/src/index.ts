@@ -12,7 +12,7 @@ export default definePackage({
   id: 'example-pkg',
   name: 'Example Package',
   version: '0.1.0',
-  // Package-level config, editable from the rundown's PACKAGES tab.
+  // Package-level config — edited from the EXAMPLE rundown tab (see panels).
   config: {
     schema: exampleConfigSchema,
     defaults: exampleConfigDefaults,
@@ -22,6 +22,14 @@ export default definePackage({
   data: { ticker: exampleTickerDataSchema },
   // In-process provider — starts automatically once a rundown attaches this package.
   providers: [exampleTickerProvider],
+  // Top-level rundown tab (appears when this package is attached).
+  panels: [
+    {
+      id: 'config',
+      label: 'EXAMPLE',
+      Panel: () => import('./panels/ConfigPanel'),
+    },
+  ],
   templates: [
     defineTemplate({
       ...exampleLowerThirdTemplateSchema,

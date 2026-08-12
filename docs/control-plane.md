@@ -226,5 +226,4 @@ Coverage in [`src/control/control.test.ts`](../src/control/control.test.ts): pro
 
 - Server-authoritative game clocks (scorebug `setInterval` is still local so multi-source clocks can drift) — the live-data subsystem's host clock provider is the intended replacement; not yet wired into `drexel/basketball-scorebug`.
 - `select` (server-side function) live bindings — only declarative `bind` paths are implemented today.
-- Custom package panels (`panels` extension point) — the rundown PACKAGES tab currently renders a generic config form from `config.fields`/JSON Schema instead of package-supplied React panels.
 - Provider hot-reload on package re-upload isn't automatic; detach/re-attach (or restart the server) to pick up new provider code.

@@ -51,8 +51,9 @@ Import alias: `#/*` → `src/*` (also configured in `tsconfig`). Prefer `#/contr
 /control/$rundownId            Tabbed rundown shell
 /control/$rundownId/           Playout (grid, PVW/PGM, properties)
 /control/$rundownId/templates
-/control/$rundownId/packages   Attach/detach packages, config, providers, live data (docs/live-data.md)
+/control/$rundownId/packages   Attach/detach packages, providers, live data (docs/live-data.md)
 /control/$rundownId/renderers
+/control/$rundownId/panel/$packageId/$panelId   Package-registered control panel (attached packages only)
 /graphics/<show>/<name>        Template renderer (+ GraphicStage)
 /render                        Default composite (follows active/open rundown)
 /render/$rundownId             Composite of on-air instances

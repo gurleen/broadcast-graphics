@@ -4,6 +4,7 @@ import type {
   DatasetDeclaration,
   FieldDef,
   PackageConfigDef,
+  PackagePanelProps,
   ProviderDefinition,
   TemplateControlsProps,
   TemplateLiveBinding,
@@ -37,6 +38,8 @@ export type {
   ProviderContext,
   ProviderState,
   ProviderStatus,
+  PackagePanelProps,
+  PackagePanelLiveDatum,
 } from '@hydra-tv/hydra-gfx-runtime/types'
 
 export type DefinedTemplate<TProps extends Record<string, unknown> = Record<string, unknown>> =
@@ -45,6 +48,14 @@ export type DefinedTemplate<TProps extends Record<string, unknown> = Record<stri
     route?: string
     packageId?: string
   }
+
+/** A package-registered rundown tab panel (lazy factory, like template Controls). */
+export type PackagePanelDef<TConfig extends Record<string, unknown> = Record<string, unknown>> = {
+  id: string
+  /** Tab label shown in the rundown shell (e.g. `EXAMPLE`). */
+  label: string
+  Panel: ComponentFactory<PackagePanelProps<TConfig>>
+}
 
 export type DefinePackageInput = {
   id: string
@@ -60,6 +71,12 @@ export type DefinePackageInput = {
   /** In-process live-data feeds shipped alongside the package. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   providers?: ProviderDefinition<any>[]
+  /**
+   * Control panels registered as top-level rundown tabs when this package is
+   * attached. Manifest only carries id/label; Panel is resolved in the browser.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  panels?: PackagePanelDef<any>[]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   templates: DefinedTemplate<any>[]
 }
@@ -95,6 +112,11 @@ export type PackageManifestProvider = {
   autostart: boolean
 }
 
+export type PackageManifestPanel = {
+  id: string
+  label: string
+}
+
 export type PackageManifest = {
   formatVersion: typeof FORMAT_VERSION
   runtime: string
@@ -104,6 +126,7 @@ export type PackageManifest = {
   dataKeys?: PackageManifestDataKey[]
   datasets?: DatasetDeclaration[]
   providers?: PackageManifestProvider[]
+  panels?: PackageManifestPanel[]
 }
 
 export function defineTemplate<TProps extends Record<string, unknown>>(
@@ -137,6 +160,21 @@ export function definePackage(input: DefinePackageInput): DefinedPackage {
       throw new Error(`Duplicate provider id "${p.id}" in package "${input.id}"`)
     }
     seenProviders.add(p.id)
+  }
+  const seenPanels = new Set<string>()
+  for (const panel of input.panels ?? []) {
+    if (!panel.id || !/^[a-z0-9][a-z0-9_-]*$/.test(panel.id)) {
+      throw new Error(
+        `Invalid panel id "${panel.id}" in package "${input.id}" — use lowercase alphanumerics, - and _`,
+      )
+    }
+    if (seenPanels.has(panel.id)) {
+      throw new Error(`Duplicate panel id "${panel.id}" in package "${input.id}"`)
+    }
+    if (!panel.label?.trim()) {
+      throw new Error(`Panel "${panel.id}" in package "${input.id}" needs a non-empty label`)
+    }
+    seenPanels.add(panel.id)
   }
   return input
 }

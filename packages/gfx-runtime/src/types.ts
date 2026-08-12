@@ -143,3 +143,31 @@ export type ProviderDefinition<TConfig extends Record<string, unknown> = Record<
     ctx: ProviderContext<TConfig>,
   ) => void | (() => void) | Promise<void | (() => void)>
 }
+
+// ── Package control panels (rundown tab extension point) ─────────────────────
+
+/** One live-data row scoped to this package (passed into package panels). */
+export type PackagePanelLiveDatum = {
+  key: string
+  value: unknown
+  revision: number
+  updatedAt: number
+}
+
+/**
+ * Props Hydra passes to a package-registered control panel. Panels render as
+ * top-level rundown tabs when the package is attached.
+ */
+export type PackagePanelProps<TConfig extends Record<string, unknown> = Record<string, unknown>> = {
+  rundownId: string
+  packageId: string
+  config: TConfig
+  patchConfig: (patch: Partial<TConfig>) => void
+  replaceConfig: (next: TConfig) => void
+  /** Live-data values for this package only. */
+  data: PackagePanelLiveDatum[]
+  /** Provider statuses for this package only. */
+  providers: ProviderStatus[]
+  publishData: (key: string, value: unknown) => void
+  clearData: (key: string) => void
+}

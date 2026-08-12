@@ -13,4 +13,6 @@ export type {
   ProviderStatus,
   ProviderContext,
   ProviderDefinition,
+  PackagePanelLiveDatum,
+  PackagePanelProps,
 } from '@hydra-tv/hydra-gfx-runtime/types'

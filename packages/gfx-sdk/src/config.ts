@@ -165,5 +165,9 @@ export async function buildManifest(
       scope: p.scope ?? 'rundown',
       autostart: p.autostart ?? true,
     })),
+    panels: pkg.panels?.map((p) => ({
+      id: p.id,
+      label: p.label,
+    })),
   }
 }

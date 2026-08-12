@@ -25,4 +25,6 @@ export type {
   ProviderStatus,
   ProviderContext,
   ProviderDefinition,
+  PackagePanelLiveDatum,
+  PackagePanelProps,
 } from './types'

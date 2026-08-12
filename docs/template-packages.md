@@ -10,10 +10,10 @@ A `.hgfx.js` file is a single ES module with two exports:
 
 | Export | Contents |
 |--------|----------|
-| `export default` | `definePackage({ id, name, version, config?, data?, datasets?, providers?, templates })` — live zod schemas + **lazy** `Render` / `Controls` / `PreviewControls` factories, plus optional live-data declarations (see below) |
-| `export const manifest` | Pure JSON metadata: `formatVersion`, `runtime` range, package info, per-template `defaults` / `fields` / `transition` / `live` / `jsonSchema`, plus package `config` / `dataKeys` / `datasets` / `providers` descriptors |
+| `export default` | `definePackage({ id, name, version, config?, data?, datasets?, providers?, panels?, templates })` — live zod schemas + **lazy** `Render` / `Controls` / `PreviewControls` / panel `Panel` factories, plus optional live-data declarations (see below) |
+| `export const manifest` | Pure JSON metadata: `formatVersion`, `runtime` range, package info, per-template `defaults` / `fields` / `transition` / `live` / `jsonSchema`, plus package `config` / `dataKeys` / `datasets` / `providers` / `panels` descriptors |
 
-A package that only ships templates can ignore `config` / `data` / `datasets` / `providers` entirely — they're additive. See [`docs/live-data.md`](./live-data.md) for the full live-data model (package-level config, rundown-scoped data keys, in-process providers, and binding live data onto template props via `live.bind`).
+A package that only ships templates can ignore `config` / `data` / `datasets` / `providers` / `panels` entirely — they're additive. See [`docs/live-data.md`](./live-data.md) for the full live-data model (package-level config, control panels as rundown tabs, rundown-scoped data keys, in-process providers, and binding live data onto template props via `live.bind`).
 
 Shared host libraries are **not** bundled. The CLI rewrites those imports to:
 

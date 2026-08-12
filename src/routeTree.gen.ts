@@ -25,6 +25,7 @@ import { Route as GraphicsDrexelBasketballScorebugRouteRouteImport } from './rou
 import { Route as GraphicsLaborOfLoveBracketRouteRouteImport } from './routes/graphics/labor-of-love/bracket/route'
 import { Route as GraphicsLaborOfLoveLowerThirdRouteRouteImport } from './routes/graphics/labor-of-love/lower-third/route'
 import { Route as GraphicsPSplatRouteImport } from './routes/graphics/p/$'
+import { Route as ControlRundownIdPanelPackageIdPanelIdRouteImport } from './routes/control/$rundownId/panel.$packageId.$panelId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -112,6 +113,12 @@ const GraphicsPSplatRoute = GraphicsPSplatRouteImport.update({
   path: '/p/$',
   getParentRoute: () => GraphicsRouteRoute,
 } as any)
+const ControlRundownIdPanelPackageIdPanelIdRoute =
+  ControlRundownIdPanelPackageIdPanelIdRouteImport.update({
+    id: '/panel/$packageId/$panelId',
+    path: '/panel/$packageId/$panelId',
+    getParentRoute: () => ControlRundownIdRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/control/$rundownId/templates': typeof ControlRundownIdTemplatesRoute
   '/graphics/p/$': typeof GraphicsPSplatRoute
   '/control/$rundownId/': typeof ControlRundownIdIndexRoute
+  '/control/$rundownId/panel/$packageId/$panelId': typeof ControlRundownIdPanelPackageIdPanelIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -146,6 +154,7 @@ export interface FileRoutesByTo {
   '/control/$rundownId/templates': typeof ControlRundownIdTemplatesRoute
   '/graphics/p/$': typeof GraphicsPSplatRoute
   '/control/$rundownId': typeof ControlRundownIdIndexRoute
+  '/control/$rundownId/panel/$packageId/$panelId': typeof ControlRundownIdPanelPackageIdPanelIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -165,6 +174,7 @@ export interface FileRoutesById {
   '/control/$rundownId/templates': typeof ControlRundownIdTemplatesRoute
   '/graphics/p/$': typeof GraphicsPSplatRoute
   '/control/$rundownId/': typeof ControlRundownIdIndexRoute
+  '/control/$rundownId/panel/$packageId/$panelId': typeof ControlRundownIdPanelPackageIdPanelIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/control/$rundownId/templates'
     | '/graphics/p/$'
     | '/control/$rundownId/'
+    | '/control/$rundownId/panel/$packageId/$panelId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -201,6 +212,7 @@ export interface FileRouteTypes {
     | '/control/$rundownId/templates'
     | '/graphics/p/$'
     | '/control/$rundownId'
+    | '/control/$rundownId/panel/$packageId/$panelId'
   id:
     | '__root__'
     | '/'
@@ -219,6 +231,7 @@ export interface FileRouteTypes {
     | '/control/$rundownId/templates'
     | '/graphics/p/$'
     | '/control/$rundownId/'
+    | '/control/$rundownId/panel/$packageId/$panelId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -343,6 +356,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GraphicsPSplatRouteImport
       parentRoute: typeof GraphicsRouteRoute
     }
+    '/control/$rundownId/panel/$packageId/$panelId': {
+      id: '/control/$rundownId/panel/$packageId/$panelId'
+      path: '/panel/$packageId/$panelId'
+      fullPath: '/control/$rundownId/panel/$packageId/$panelId'
+      preLoaderRoute: typeof ControlRundownIdPanelPackageIdPanelIdRouteImport
+      parentRoute: typeof ControlRundownIdRouteRoute
+    }
   }
 }
 
@@ -351,6 +371,7 @@ interface ControlRundownIdRouteRouteChildren {
   ControlRundownIdRenderersRoute: typeof ControlRundownIdRenderersRoute
   ControlRundownIdTemplatesRoute: typeof ControlRundownIdTemplatesRoute
   ControlRundownIdIndexRoute: typeof ControlRundownIdIndexRoute
+  ControlRundownIdPanelPackageIdPanelIdRoute: typeof ControlRundownIdPanelPackageIdPanelIdRoute
 }
 
 const ControlRundownIdRouteRouteChildren: ControlRundownIdRouteRouteChildren = {
@@ -358,6 +379,8 @@ const ControlRundownIdRouteRouteChildren: ControlRundownIdRouteRouteChildren = {
   ControlRundownIdRenderersRoute: ControlRundownIdRenderersRoute,
   ControlRundownIdTemplatesRoute: ControlRundownIdTemplatesRoute,
   ControlRundownIdIndexRoute: ControlRundownIdIndexRoute,
+  ControlRundownIdPanelPackageIdPanelIdRoute:
+    ControlRundownIdPanelPackageIdPanelIdRoute,
 }
 
 const ControlRundownIdRouteRouteWithChildren =

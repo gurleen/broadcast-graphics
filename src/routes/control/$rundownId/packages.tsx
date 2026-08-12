@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { Badge, Button, Panel, Spinner, useToast } from '@hydra-tv/ui'
 import { useRundownController, useTemplateCatalog } from '#/control/client'
 import { PackageConfigEditor } from './-PackageConfigEditor'
@@ -143,11 +143,35 @@ function RundownPackagesPage() {
                         >
                           CONFIG
                         </div>
-                        <PackageConfigEditor
-                          pkg={pkg}
-                          config={attachment.config}
-                          onPatch={(patch) => void patchPackageConfig(pkg.id, patch)}
-                        />
+                        {pkg.panels.length > 0 ? (
+                          <div style={{ fontSize: 11, color: 'var(--fg-3)', lineHeight: 1.45 }}>
+                            Config lives on the package tab
+                            {pkg.panels.length === 1 ? '' : 's'}:{' '}
+                            {pkg.panels.map((panel, i) => (
+                              <span key={panel.id}>
+                                {i > 0 ? ', ' : null}
+                                <Link
+                                  to="/control/$rundownId/panel/$packageId/$panelId"
+                                  params={{
+                                    rundownId,
+                                    packageId: pkg.id,
+                                    panelId: panel.id,
+                                  }}
+                                  style={{ color: 'var(--accent)' }}
+                                >
+                                  {panel.label}
+                                </Link>
+                              </span>
+                            ))}
+                            .
+                          </div>
+                        ) : (
+                          <PackageConfigEditor
+                            pkg={pkg}
+                            config={attachment.config}
+                            onPatch={(patch) => void patchPackageConfig(pkg.id, patch)}
+                          />
+                        )}
                       </div>
 
                       {pkg.providers.length > 0 ? (

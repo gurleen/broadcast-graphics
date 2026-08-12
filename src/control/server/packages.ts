@@ -69,6 +69,8 @@ export type LoadedPackage = {
   /** In-process live-data providers (executable — server-only, never sent to clients). */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   providers?: ProviderDefinition<any>[]
+  /** Control-panel tab metadata (id/label only — Panel resolves in the browser). */
+  panels?: Array<{ id: string; label: string }>
   error: string | null
 }
 
@@ -86,6 +88,7 @@ type PackageModule = {
     datasets?: DatasetDeclaration[]
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     providers?: ProviderDefinition<any>[]
+    panels?: Array<{ id: string; label: string; Panel?: () => Promise<unknown> }>
     templates: Array<{
       id: string
       name: string
@@ -111,6 +114,7 @@ type PackageModule = {
       transition?: TemplateSchema<Record<string, unknown>>['transition']
       jsonSchema: Record<string, unknown>
     }>
+    panels?: Array<{ id: string; label: string }>
   }
 }
 
@@ -253,6 +257,9 @@ async function importPackageFile(filePath: string, contentHash: string): Promise
     dataSchemas: pkg.data,
     datasets: pkg.datasets,
     providers: pkg.providers,
+    panels:
+      pkg.panels?.map((p) => ({ id: p.id, label: p.label })) ??
+      manifest?.panels?.map((p) => ({ id: p.id, label: p.label })),
     error: null,
   }
 }

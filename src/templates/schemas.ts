@@ -78,6 +78,7 @@ export type PackagePublicMeta = {
   }
   dataKeys: string[]
   providers: Array<{ id: string; name: string; publishes: string[]; scope: string; autostart: boolean }>
+  panels: Array<{ id: string; label: string }>
 }
 
 function toPublicMeta(t: TemplateSchema<Record<string, unknown>> & { packageId?: string }): TemplatePublicMeta {
@@ -123,5 +124,6 @@ export function listPackagesPublic(): PackagePublicMeta[] {
       scope: provider.scope ?? 'rundown',
       autostart: provider.autostart ?? true,
     })),
+    panels: p.panels ?? [],
   }))
 }

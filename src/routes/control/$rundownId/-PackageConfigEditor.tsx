@@ -31,9 +31,9 @@ function parseValue(raw: unknown, previous: unknown): unknown {
 
 /**
  * Generic package-config form driven by the package's declared `config.fields`
- * (falling back to a plain key/value editor for undeclared keys). This is the
- * concrete "tab panel for package config" the SDK's `panels` extension point
- * will eventually let a package replace with custom UI.
+ * (falling back to a plain key/value editor for undeclared keys). Used on the
+ * PACKAGES tab when a package has no custom `panels`; packages that register
+ * panels host config on their own rundown tabs instead.
  */
 export function PackageConfigEditor({
   pkg,
