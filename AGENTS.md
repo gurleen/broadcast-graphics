@@ -1,6 +1,6 @@
 # AGENTS.md — HYDRA // GFX
 
-Orientation for coding agents working in this repo. Read this before editing. UI component libraries live in the separate [gurleen/ui](https://github.com/gurleen/ui) repo and are consumed from npm as `@hydra-tv/*`. Control-plane protocol detail: [`docs/control-plane.md`](./docs/control-plane.md). Dynamic template packages: [`docs/template-packages.md`](./docs/template-packages.md).
+Orientation for coding agents working in this repo. Read this before editing. UI component libraries live in the separate [gurleen/ui](https://github.com/gurleen/ui) repo and are consumed from npm as `@hydra-tv/*`. Control-plane protocol detail: [`docs/control-plane.md`](./docs/control-plane.md). Dynamic template packages: [`docs/template-packages.md`](./docs/template-packages.md). Package-level config, rundown live data, and in-process providers: [`docs/live-data.md`](./docs/live-data.md).
 
 ## What this repo is
 
@@ -51,6 +51,7 @@ Import alias: `#/*` → `src/*` (also configured in `tsconfig`). Prefer `#/contr
 /control/$rundownId            Tabbed rundown shell
 /control/$rundownId/           Playout (grid, PVW/PGM, properties)
 /control/$rundownId/templates
+/control/$rundownId/packages   Attach/detach packages, config, providers, live data (docs/live-data.md)
 /control/$rundownId/renderers
 /graphics/<show>/<name>        Template renderer (+ GraphicStage)
 /render                        Default composite (follows active/open rundown)

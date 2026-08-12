@@ -1,8 +1,17 @@
-import { getTemplateSchema } from '#/templates/schemas'
+import { getTemplatePackageId, getTemplateSchema } from '#/templates/schemas'
 import type { ControlCommand, ControlEvent } from '../protocol'
 import type { ProtocolError } from '../model'
 import * as store from './store'
 import { publish, publishMany } from './hub'
+import { deepMerge } from './util'
+import { getLoadedPackage } from './packages'
+import { recomputeRundownProjection } from './projector'
+import {
+  restartProvidersIfNeeded,
+  startAutostartProviders,
+  stopAllProvidersForPackage,
+  stopAllProvidersForRundown,
+} from './providers'
 
 export type CommandResult =
   | { ok: true; events: ControlEvent[]; rundownId: string | null }
@@ -12,29 +21,25 @@ function err(code: string, message: string): CommandResult {
   return { ok: false, error: { code, message } }
 }
 
-function deepMerge(
-  base: Record<string, unknown>,
-  patch: Record<string, unknown>,
-): Record<string, unknown> {
-  const out: Record<string, unknown> = { ...base }
-  for (const [key, value] of Object.entries(patch)) {
-    if (
-      value &&
-      typeof value === 'object' &&
-      !Array.isArray(value) &&
-      base[key] &&
-      typeof base[key] === 'object' &&
-      !Array.isArray(base[key])
-    ) {
-      out[key] = deepMerge(
-        base[key] as Record<string, unknown>,
-        value as Record<string, unknown>,
-      )
-    } else {
-      out[key] = value
-    }
+/** Attach a package (idempotent) and start its autostart providers. */
+function ensurePackageAttached(
+  rundownId: string,
+  packageId: string,
+  config?: Record<string, unknown>,
+): ControlEvent | null {
+  const existing = store.getPackageAttachment(rundownId, packageId)
+  if (existing?.attached) return null
+  const pkg = getLoadedPackage(packageId)
+  const nextConfig = config ?? existing?.config ?? (pkg?.config?.defaults as Record<string, unknown> | undefined) ?? {}
+  const attachment = store.attachPackage(rundownId, packageId, nextConfig)
+  startAutostartProviders(rundownId, packageId)
+  return {
+    type: 'rundown.package',
+    rundownId,
+    packageId,
+    attached: true,
+    config: attachment.config,
   }
-  return out
 }
 
 function defaultLabel(templateId: string, existingCount: number): string {
@@ -70,7 +75,11 @@ export function applyCommand(command: ControlCommand): CommandResult {
       const existing = store.getRundown(command.rundownId)
       if (!existing) return err('not_found', `Rundown ${command.rundownId} not found`)
       const wasActive = store.getActiveRundownId() === command.rundownId
+      const instanceIds = store.listInstances(command.rundownId).map((i) => i.id)
+      stopAllProvidersForRundown(command.rundownId)
       store.deleteRundown(command.rundownId)
+      for (const id of instanceIds) store.clearLiveOverlay(id)
+      store.clearRundownDataAll(command.rundownId)
       const events: ControlEvent[] = [
         { type: 'rundown.removed', rundownId: command.rundownId },
       ]
@@ -157,7 +166,16 @@ export function applyCommand(command: ControlCommand): CommandResult {
         layer: command.layer,
       })
       const events: ControlEvent[] = [{ type: 'instance.upserted', instance }]
+
+      // Adding an instance opts the rundown into the template's owning package.
+      const packageId = getTemplatePackageId(command.templateId)
+      if (packageId) {
+        const attachEvent = ensurePackageAttached(command.rundownId, packageId)
+        if (attachEvent) events.push(attachEvent)
+      }
+
       publishMany(command.rundownId, events)
+      recomputeRundownProjection(command.rundownId)
       return { ok: true, events, rundownId: command.rundownId }
     }
 
@@ -165,6 +183,7 @@ export function applyCommand(command: ControlCommand): CommandResult {
       const existing = store.getInstance(command.instanceId)
       if (!existing) return err('not_found', `Instance ${command.instanceId} not found`)
       store.deleteInstance(command.instanceId)
+      store.clearLiveOverlay(command.instanceId)
       const events: ControlEvent[] = [
         {
           type: 'instance.removed',
@@ -437,6 +456,181 @@ export function applyCommand(command: ControlCommand): CommandResult {
           ]),
       ]
       publishMany(command.rundownId, events)
+      return { ok: true, events, rundownId: command.rundownId }
+    }
+
+    case 'rundown.attachPackage': {
+      const rundown = store.getRundown(command.rundownId)
+      if (!rundown) return err('not_found', `Rundown ${command.rundownId} not found`)
+      const pkg = getLoadedPackage(command.packageId)
+      if (!pkg || pkg.error) return err('unknown_package', `Package ${command.packageId} not found`)
+
+      let config =
+        command.config ??
+        store.getPackageAttachment(command.rundownId, command.packageId)?.config ??
+        (pkg.config?.defaults as Record<string, unknown> | undefined) ??
+        {}
+      if (pkg.config?.schema) {
+        const parsed = pkg.config.schema.safeParse(config)
+        if (!parsed.success) {
+          return err(
+            'invalid_config',
+            parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
+          )
+        }
+        config = parsed.data
+      }
+
+      const attachment = store.attachPackage(command.rundownId, command.packageId, config)
+      const events: ControlEvent[] = [
+        {
+          type: 'rundown.package',
+          rundownId: command.rundownId,
+          packageId: command.packageId,
+          attached: true,
+          config: attachment.config,
+        },
+      ]
+      publishMany(command.rundownId, events)
+      startAutostartProviders(command.rundownId, command.packageId)
+      recomputeRundownProjection(command.rundownId)
+      return { ok: true, events, rundownId: command.rundownId }
+    }
+
+    case 'rundown.detachPackage': {
+      const rundown = store.getRundown(command.rundownId)
+      if (!rundown) return err('not_found', `Rundown ${command.rundownId} not found`)
+      const attachment = store.detachPackage(command.rundownId, command.packageId)
+      if (!attachment) return err('not_attached', `Package ${command.packageId} is not attached`)
+      stopAllProvidersForPackage(command.rundownId, command.packageId)
+      const events: ControlEvent[] = [
+        {
+          type: 'rundown.package',
+          rundownId: command.rundownId,
+          packageId: command.packageId,
+          attached: false,
+          config: attachment.config,
+        },
+      ]
+      publishMany(command.rundownId, events)
+      return { ok: true, events, rundownId: command.rundownId }
+    }
+
+    case 'rundown.patchConfig': {
+      const attachment = store.getPackageAttachment(command.rundownId, command.packageId)
+      if (!attachment) return err('not_attached', `Package ${command.packageId} is not attached`)
+      const pkg = getLoadedPackage(command.packageId)
+      if (pkg?.config?.schema) {
+        const merged = deepMerge(attachment.config, command.patch)
+        const parsed = pkg.config.schema.safeParse(merged)
+        if (!parsed.success) {
+          return err(
+            'invalid_config',
+            parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
+          )
+        }
+      }
+      const updated = store.patchPackageConfig(command.rundownId, command.packageId, command.patch)!
+      const events: ControlEvent[] = [
+        {
+          type: 'rundown.package',
+          rundownId: command.rundownId,
+          packageId: command.packageId,
+          attached: updated.attached,
+          config: updated.config,
+        },
+      ]
+      publishMany(command.rundownId, events)
+      restartProvidersIfNeeded(command.rundownId, command.packageId)
+      recomputeRundownProjection(command.rundownId)
+      return { ok: true, events, rundownId: command.rundownId }
+    }
+
+    case 'rundown.replaceConfig': {
+      const attachment = store.getPackageAttachment(command.rundownId, command.packageId)
+      if (!attachment) return err('not_attached', `Package ${command.packageId} is not attached`)
+      const pkg = getLoadedPackage(command.packageId)
+      let config = command.config
+      if (pkg?.config?.schema) {
+        const parsed = pkg.config.schema.safeParse(config)
+        if (!parsed.success) {
+          return err(
+            'invalid_config',
+            parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
+          )
+        }
+        config = parsed.data
+      }
+      const updated = store.replacePackageConfig(command.rundownId, command.packageId, config)!
+      const events: ControlEvent[] = [
+        {
+          type: 'rundown.package',
+          rundownId: command.rundownId,
+          packageId: command.packageId,
+          attached: updated.attached,
+          config: updated.config,
+        },
+      ]
+      publishMany(command.rundownId, events)
+      restartProvidersIfNeeded(command.rundownId, command.packageId)
+      recomputeRundownProjection(command.rundownId)
+      return { ok: true, events, rundownId: command.rundownId }
+    }
+
+    case 'data.publish': {
+      const attachment = store.getPackageAttachment(command.rundownId, command.packageId)
+      if (!attachment?.attached) {
+        return err('not_attached', `Package ${command.packageId} is not attached to this rundown`)
+      }
+      const pkg = getLoadedPackage(command.packageId)
+      let value = command.value
+      const schema = pkg?.dataSchemas?.[command.key]
+      if (schema) {
+        const parsed = schema.safeParse(value)
+        if (!parsed.success) {
+          return err(
+            'invalid_data',
+            parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
+          )
+        }
+        value = parsed.data
+      }
+      const record = store.publishRundownData(command.rundownId, command.packageId, command.key, value)
+      const events: ControlEvent[] = [
+        {
+          type: 'data.changed',
+          rundownId: command.rundownId,
+          packageId: command.packageId,
+          key: command.key,
+          value: record.value,
+          revision: record.revision,
+          updatedAt: record.updatedAt,
+        },
+      ]
+      publishMany(command.rundownId, events)
+      recomputeRundownProjection(command.rundownId)
+      return { ok: true, events, rundownId: command.rundownId }
+    }
+
+    case 'data.clear': {
+      const attachment = store.getPackageAttachment(command.rundownId, command.packageId)
+      if (!attachment?.attached) {
+        return err('not_attached', `Package ${command.packageId} is not attached to this rundown`)
+      }
+      store.clearRundownData(command.rundownId, command.packageId, command.key)
+      const events: ControlEvent[] = [
+        {
+          type: 'data.changed',
+          rundownId: command.rundownId,
+          packageId: command.packageId,
+          key: command.key,
+          value: undefined,
+          revision: 0,
+          updatedAt: Date.now(),
+        },
+      ]
+      publishMany(command.rundownId, events)
+      recomputeRundownProjection(command.rundownId)
       return { ok: true, events, rundownId: command.rundownId }
     }
 

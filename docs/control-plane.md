@@ -22,8 +22,8 @@ Automation / curl ─REST┘         │
             bun:sqlite (durable)     in-memory renderers
 ```
 
-- **Durable state** (SQLite): rundowns, instances, props, playout intent (`in` / `out`), and the active rundown pointer for `/render`.
-- **Ephemeral state** (memory): connected renderer/control sessions and reported playback phases.
+- **Durable state** (SQLite): rundowns, instances, props, playout intent (`in` / `out`), package attachments + config, and the active rundown pointer for `/render`.
+- **Ephemeral state** (memory): connected renderer/control sessions, reported playback phases, the live-data store, the live props overlay, and running providers. None of this is written to SQLite — see [`docs/live-data.md`](./live-data.md).
 - Every mutation goes through `applyCommand` → events published on an in-process hub → all WebSocket subscribers for that rundown (global events like `packages.changed` / `activeRundown.changed` fan out to every session).
 
 Key paths:
@@ -33,8 +33,8 @@ Key paths:
 | [`src/control/app.ts`](../src/control/app.ts) | Hono REST + WS |
 | [`server/app.ts`](../server/app.ts) | Re-export for Bun servers |
 | [`src/control/model.ts`](../src/control/model.ts) | Zod domain models |
-| [`src/control/protocol.ts`](../src/control/protocol.ts) | Wire protocol (v1) |
-| [`src/control/server/`](../src/control/server/) | DB, store, commands, hub, sessions |
+| [`src/control/protocol.ts`](../src/control/protocol.ts) | Wire protocol (v2) |
+| [`src/control/server/`](../src/control/server/) | DB, store, commands, hub, sessions, live data (`projector.ts`, `providers.ts`, `datasets.ts`) |
 | [`src/control/client/`](../src/control/client/) | Socket, store, React hooks |
 | [`src/templates/schemas.ts`](../src/templates/schemas.ts) | Server-safe template registry |
 | [`src/templates/registry.tsx`](../src/templates/registry.tsx) | Client Render/Controls map |
@@ -82,6 +82,10 @@ Base: `/api/control`
 | `POST` | `/rundowns/:id/commands` | One command body, or `{ commands: [...] }` |
 | `GET` | `/active-rundown` | `{ rundownId }` for default `/render` |
 | `PUT` | `/active-rundown` | Set pointer `{ rundownId }` (`null` clears) |
+| `GET` | `/datasets/:packageId/:datasetId` | Fetch (cached) package dataset |
+| `GET` | `/rundowns/:id/providers` | Provider statuses + log tails for a rundown |
+
+Package attach/config/data are commands (below), not their own REST verbs — send them through `/rundowns/:id/commands` like any other command.
 
 `rundownId` is injected from the URL when omitted on commands that need it.
 
@@ -114,7 +118,7 @@ open "http://localhost:3000/graphics/labor-of-love/lower-third?rundown=$ID&insta
 ## WebSocket protocol
 
 Endpoint: `ws(s)://{host}/api/control/ws`  
-`PROTOCOL_VERSION = 1`
+`PROTOCOL_VERSION = 2`
 
 ### Client → server
 
@@ -143,13 +147,16 @@ Invalid frames produce an `ack`/`error` with `code` + `message`; the socket stay
 `rundown.create` · `rundown.rename` · `rundown.delete` · `rundown.reorder` · `rundown.setActive`  
 `instance.add` · `instance.remove` · `instance.relabel` · `instance.reorder`  
 `instance.patchProps` · `instance.replaceProps` · `instance.resetProps`  
-`playout.cue` · `playout.take` · `playout.in` · `playout.out` · `playout.toggle` · `playout.clearAll` · `playout.panic`
+`playout.cue` · `playout.take` · `playout.in` · `playout.out` · `playout.toggle` · `playout.clearAll` · `playout.panic`  
+`rundown.attachPackage` · `rundown.detachPackage` · `rundown.patchConfig` · `rundown.replaceConfig`  
+`data.publish` · `data.clear` — see [`docs/live-data.md`](./live-data.md)
 
 ### Events
 
 `rundown.upserted` · `rundown.removed` · `activeRundown.changed`  
-`instance.upserted` · `instance.removed` · `instance.props` (delta for high-frequency edits)  
-`playout.changed` · `playout.panic` · `renderer.upserted` · `renderer.removed` · `packages.changed` · `error`
+`instance.upserted` · `instance.removed` · `instance.props` (delta for high-frequency edits, also used by live projections)  
+`playout.changed` · `playout.panic` · `renderer.upserted` · `renderer.removed` · `packages.changed` · `error`  
+`rundown.package` · `data.changed` · `provider.status` — see [`docs/live-data.md`](./live-data.md)
 
 ## Client hooks
 
@@ -159,8 +166,8 @@ Import from `#/control/client`.
 
 Operator / control UI API:
 
-- State: `snapshot`, `instances`, `renderers`, `status`, `log`
-- Senders: `cue`, `take`, `in`, `out`, `toggle`, `clearAll`, `panic`, `patchProps`, `replaceProps`, `addInstance`, `removeInstance`, `reorder`, …
+- State: `snapshot`, `instances`, `renderers`, `packages`, `data`, `providers`, `status`, `log`
+- Senders: `cue`, `take`, `in`, `out`, `toggle`, `clearAll`, `panic`, `patchProps`, `replaceProps`, `addInstance`, `removeInstance`, `reorder`, `attachPackage`, `detachPackage`, `patchPackageConfig`, `replacePackageConfig`, `publishData`, `clearData`, …
 
 ### `useControlledGraphic(template)`
 
@@ -213,8 +220,11 @@ Client half (`-Graphic.tsx`, optional Controls) registers with [`src/templates/r
 bun test
 ```
 
-Coverage in [`src/control/control.test.ts`](../src/control/control.test.ts): protocol parsing, prop validation, cue/take/clearAll, revision bumps, snapshots (`CONTROLLER_DB=:memory:`).
+Coverage in [`src/control/control.test.ts`](../src/control/control.test.ts): protocol parsing, prop validation, cue/take/clearAll, revision bumps, snapshots, package attach/config/data/providers (`CONTROLLER_DB=:memory:`).
 
 ## Follow-ups
 
-- Server-authoritative game clocks (scorebug `setInterval` is still local so multi-source clocks can drift)
+- Server-authoritative game clocks (scorebug `setInterval` is still local so multi-source clocks can drift) — the live-data subsystem's host clock provider is the intended replacement; not yet wired into `drexel/basketball-scorebug`.
+- `select` (server-side function) live bindings — only declarative `bind` paths are implemented today.
+- Custom package panels (`panels` extension point) — the rundown PACKAGES tab currently renders a generic config form from `config.fields`/JSON Schema instead of package-supplied React panels.
+- Provider hot-reload on package re-upload isn't automatic; detach/re-attach (or restart the server) to pick up new provider code.

@@ -44,6 +44,14 @@ export function getTemplateIds(): string[] {
   return listTemplates().map((t) => t.id)
 }
 
+/** The owning package for a template, if it came from a dynamic `.hgfx.js` package. */
+export function getTemplatePackageId(id: string): string | undefined {
+  const dynamic = getDynamicTemplateSchema(id) as (TemplateSchema<Record<string, unknown>> & {
+    packageId?: string
+  }) | undefined
+  return dynamic?.packageId
+}
+
 export type TemplatePublicMeta = {
   id: string
   name: string
@@ -63,6 +71,13 @@ export type PackagePublicMeta = {
   contentHash: string
   error: string | null
   templateIds: string[]
+  config?: {
+    defaults: Record<string, unknown>
+    fields?: TemplateSchema<Record<string, unknown>>['fields']
+    jsonSchema: Record<string, unknown>
+  }
+  dataKeys: string[]
+  providers: Array<{ id: string; name: string; publishes: string[]; scope: string; autostart: boolean }>
 }
 
 function toPublicMeta(t: TemplateSchema<Record<string, unknown>> & { packageId?: string }): TemplatePublicMeta {
@@ -93,5 +108,20 @@ export function listPackagesPublic(): PackagePublicMeta[] {
     contentHash: p.contentHash,
     error: p.error,
     templateIds: p.templates.map((t) => t.id),
+    config: p.config
+      ? {
+          defaults: p.config.defaults,
+          fields: p.config.fields,
+          jsonSchema: z.toJSONSchema(p.config.schema) as Record<string, unknown>,
+        }
+      : undefined,
+    dataKeys: p.dataSchemas ? Object.keys(p.dataSchemas) : [],
+    providers: (p.providers ?? []).map((provider) => ({
+      id: provider.id,
+      name: provider.name,
+      publishes: provider.publishes ?? [],
+      scope: provider.scope ?? 'rundown',
+      autostart: provider.autostart ?? true,
+    })),
   }))
 }

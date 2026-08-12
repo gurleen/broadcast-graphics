@@ -21,6 +21,9 @@ const EMPTY_STATE: RundownStoreState = {
   rundown: null,
   instances: new Map(),
   renderers: new Map(),
+  packages: new Map(),
+  data: new Map(),
+  providers: new Map(),
   seq: 0,
   error: null,
   panicSeq: 0,
@@ -118,6 +121,9 @@ export function useRundownController(rundownId: string | null | undefined) {
     rundown: state.rundown,
     instances,
     renderers: [...state.renderers.values()],
+    packages: [...state.packages.values()],
+    data: [...state.data.values()],
+    providers: [...state.providers.values()],
     panicSeq: state.panicSeq,
     error: state.error,
     log,
@@ -155,6 +161,18 @@ export function useRundownController(rundownId: string | null | undefined) {
       send({ type: 'instance.relabel', instanceId: id, label: nextLabel }),
     reorder: (orderedIds: string[]) =>
       send({ type: 'instance.reorder', rundownId: rundownId!, orderedIds }),
+    attachPackage: (packageId: string, config?: Record<string, unknown>) =>
+      send({ type: 'rundown.attachPackage', rundownId: rundownId!, packageId, config }),
+    detachPackage: (packageId: string) =>
+      send({ type: 'rundown.detachPackage', rundownId: rundownId!, packageId }),
+    patchPackageConfig: (packageId: string, patch: Record<string, unknown>) =>
+      send({ type: 'rundown.patchConfig', rundownId: rundownId!, packageId, patch }),
+    replacePackageConfig: (packageId: string, config: Record<string, unknown>) =>
+      send({ type: 'rundown.replaceConfig', rundownId: rundownId!, packageId, config }),
+    publishData: (packageId: string, key: string, value: unknown) =>
+      send({ type: 'data.publish', rundownId: rundownId!, packageId, key, value }),
+    clearData: (packageId: string, key: string) =>
+      send({ type: 'data.clear', rundownId: rundownId!, packageId, key }),
   }
 }
 

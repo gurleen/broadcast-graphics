@@ -9,7 +9,7 @@ import {
   ClientRole,
 } from './model'
 
-export const PROTOCOL_VERSION = 1 as const
+export const PROTOCOL_VERSION = 2 as const
 
 // ── Commands (mutations issued by control clients / REST) ──────────────────
 
@@ -78,6 +78,43 @@ export const ControlCommand = z.discriminatedUnion('type', [
   z.object({ type: z.literal('playout.toggle'), instanceId: z.string() }),
   z.object({ type: z.literal('playout.clearAll'), rundownId: z.string() }),
   z.object({ type: z.literal('playout.panic'), rundownId: z.string() }),
+  z.object({
+    type: z.literal('rundown.attachPackage'),
+    rundownId: z.string(),
+    packageId: z.string(),
+    /** Defaults to the package's declared config defaults (or `{}`). */
+    config: z.record(z.string(), z.unknown()).optional(),
+  }),
+  z.object({
+    type: z.literal('rundown.detachPackage'),
+    rundownId: z.string(),
+    packageId: z.string(),
+  }),
+  z.object({
+    type: z.literal('rundown.patchConfig'),
+    rundownId: z.string(),
+    packageId: z.string(),
+    patch: z.record(z.string(), z.unknown()),
+  }),
+  z.object({
+    type: z.literal('rundown.replaceConfig'),
+    rundownId: z.string(),
+    packageId: z.string(),
+    config: z.record(z.string(), z.unknown()),
+  }),
+  z.object({
+    type: z.literal('data.publish'),
+    rundownId: z.string(),
+    packageId: z.string(),
+    key: z.string(),
+    value: z.unknown(),
+  }),
+  z.object({
+    type: z.literal('data.clear'),
+    rundownId: z.string(),
+    packageId: z.string(),
+    key: z.string(),
+  }),
 ])
 export type ControlCommand = z.infer<typeof ControlCommand>
 
@@ -127,6 +164,31 @@ export const ControlEvent = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('activeRundown.changed'),
     rundownId: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal('rundown.package'),
+    rundownId: z.string(),
+    packageId: z.string(),
+    attached: z.boolean(),
+    config: z.record(z.string(), z.unknown()),
+  }),
+  z.object({
+    type: z.literal('data.changed'),
+    rundownId: z.string(),
+    packageId: z.string(),
+    key: z.string(),
+    value: z.unknown(),
+    revision: z.number().int(),
+    updatedAt: z.number(),
+  }),
+  z.object({
+    type: z.literal('provider.status'),
+    rundownId: z.string(),
+    packageId: z.string(),
+    providerId: z.string(),
+    state: z.enum(['idle', 'starting', 'ok', 'error', 'stopped']),
+    message: z.string().nullable(),
+    at: z.number(),
   }),
   z.object({ type: z.literal('error'), error: ProtocolError }),
 ])

@@ -11,6 +11,7 @@ export const Route = createFileRoute('/control/$rundownId')({
 const TABS = [
   { label: 'PLAYOUT', to: '/control/$rundownId' as const },
   { label: 'TEMPLATES', to: '/control/$rundownId/templates' as const },
+  { label: 'PACKAGES', to: '/control/$rundownId/packages' as const },
   { label: 'RENDERERS', to: '/control/$rundownId/renderers' as const },
 ]
 
@@ -40,7 +41,8 @@ function RundownLayout() {
 
   const activeTab = (() => {
     if (pathname.endsWith('/templates')) return 1
-    if (pathname.endsWith('/renderers')) return 2
+    if (pathname.endsWith('/packages')) return 2
+    if (pathname.endsWith('/renderers')) return 3
     return 0
   })()
 

@@ -1,8 +1,12 @@
 import type { ComponentType } from 'react'
 import type { z } from 'zod'
 import type {
+  DatasetDeclaration,
   FieldDef,
+  PackageConfigDef,
+  ProviderDefinition,
   TemplateControlsProps,
+  TemplateLiveBinding,
   TemplateRenderProps,
   TemplateTransition,
 } from '@hydra-tv/hydra-gfx-runtime/types'
@@ -20,11 +24,20 @@ export type DefineTemplateInput<TProps extends Record<string, unknown>> = {
   defaults: TProps
   fields?: { [K in keyof TProps & string]?: FieldDef }
   transition?: TemplateTransition
+  /** Bind props to rundown-level live data / package config (see `data` below). */
+  live?: TemplateLiveBinding
   /** Lazy factory — keep DOM libraries out of the server import graph. */
   Render: ComponentFactory<TemplateRenderProps<TProps>>
   Controls?: ComponentFactory<TemplateControlsProps<TProps>>
   PreviewControls?: ComponentFactory<TemplateControlsProps<TProps>>
 }
+
+export type { PackageConfigDef, DatasetDeclaration, ProviderDefinition } from '@hydra-tv/hydra-gfx-runtime/types'
+export type {
+  ProviderContext,
+  ProviderState,
+  ProviderStatus,
+} from '@hydra-tv/hydra-gfx-runtime/types'
 
 export type DefinedTemplate<TProps extends Record<string, unknown> = Record<string, unknown>> =
   DefineTemplateInput<TProps> & {
@@ -37,6 +50,16 @@ export type DefinePackageInput = {
   id: string
   name: string
   version: string
+  /** Package-level operator config (sport, home/away team, season, ...). */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  config?: PackageConfigDef<any>
+  /** Rundown-scoped live-data keys this package reads/writes, keyed by name. */
+  data?: Record<string, z.ZodType<unknown>>
+  /** Remote reference data Hydra should fetch + cache (teams, rosters, ...). */
+  datasets?: DatasetDeclaration[]
+  /** In-process live-data feeds shipped alongside the package. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  providers?: ProviderDefinition<any>[]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   templates: DefinedTemplate<any>[]
 }
@@ -49,7 +72,27 @@ export type PackageManifestTemplate = {
   defaults: Record<string, unknown>
   fields?: Record<string, FieldDef>
   transition?: TemplateTransition
+  live?: TemplateLiveBinding
   jsonSchema: Record<string, unknown>
+}
+
+export type PackageManifestConfig = {
+  defaults: Record<string, unknown>
+  fields?: Record<string, FieldDef>
+  jsonSchema: Record<string, unknown>
+}
+
+export type PackageManifestDataKey = {
+  key: string
+  jsonSchema: Record<string, unknown>
+}
+
+export type PackageManifestProvider = {
+  id: string
+  name: string
+  publishes: string[]
+  scope: 'rundown' | 'host'
+  autostart: boolean
 }
 
 export type PackageManifest = {
@@ -57,11 +100,22 @@ export type PackageManifest = {
   runtime: string
   package: { id: string; name: string; version: string }
   templates: PackageManifestTemplate[]
+  config?: PackageManifestConfig
+  dataKeys?: PackageManifestDataKey[]
+  datasets?: DatasetDeclaration[]
+  providers?: PackageManifestProvider[]
 }
 
 export function defineTemplate<TProps extends Record<string, unknown>>(
   input: DefineTemplateInput<TProps>,
 ): DefinedTemplate<TProps> {
+  return input
+}
+
+/** Define an in-process live-data provider (see `ProviderDefinition`). */
+export function defineProvider<TConfig extends Record<string, unknown> = Record<string, unknown>>(
+  input: ProviderDefinition<TConfig>,
+): ProviderDefinition<TConfig> {
   return input
 }
 
@@ -76,6 +130,13 @@ export function definePackage(input: DefinePackageInput): DefinedPackage {
   for (const t of input.templates) {
     if (seen.has(t.id)) throw new Error(`Duplicate template id "${t.id}" in package "${input.id}"`)
     seen.add(t.id)
+  }
+  const seenProviders = new Set<string>()
+  for (const p of input.providers ?? []) {
+    if (seenProviders.has(p.id)) {
+      throw new Error(`Duplicate provider id "${p.id}" in package "${input.id}"`)
+    }
+    seenProviders.add(p.id)
   }
   return input
 }

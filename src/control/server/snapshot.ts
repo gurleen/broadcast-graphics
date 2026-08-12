@@ -1,6 +1,7 @@
 import * as store from './store'
 import { listRenderers } from './sessions'
 import { getHubSeq } from './hub'
+import { listProviderStatuses } from './providers'
 import type { RundownSnapshot } from '../model'
 
 export function buildSnapshot(rundownId: string): RundownSnapshot | null {
@@ -10,6 +11,9 @@ export function buildSnapshot(rundownId: string): RundownSnapshot | null {
     rundown,
     instances: store.listInstances(rundownId),
     renderers: listRenderers(rundownId),
+    packages: store.listPackageAttachments(rundownId, true),
+    data: store.listRundownData(rundownId),
+    providers: listProviderStatuses(rundownId),
     seq: getHubSeq(rundownId),
     serverTime: Date.now(),
   }
